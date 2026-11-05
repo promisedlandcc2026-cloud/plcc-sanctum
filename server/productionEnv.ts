@@ -2,8 +2,6 @@ export const API_PRODUCTION_KEYS = [
   'DATABASE_URL',
   'PUBLIC_SITE_ORIGINS',
   'APP_URL',
-  'SITE_REVALIDATE_URL',
-  'REVALIDATE_SECRET',
   'CRON_SECRET',
   'LIVEKIT_URL',
   'LIVEKIT_API_KEY',
@@ -11,9 +9,6 @@ export const API_PRODUCTION_KEYS = [
   'CLERK_PUBLISHABLE_KEY',
   'CLERK_SECRET_KEY',
   'VITE_CLERK_PUBLISHABLE_KEY',
-  'CLOUDINARY_CLOUD_NAME',
-  'CLOUDINARY_API_KEY',
-  'CLOUDINARY_API_SECRET',
   'PUBLIC_SITE_URL',
   'DEPLOY_ENV',
 ] as const;
@@ -53,13 +48,8 @@ export function productionConfigProblems(source: NodeJS.ProcessEnv = process.env
   if (source.DEPLOY_ENV !== 'staging' && source.DEPLOY_ENV !== 'production') {
     problems.push('DEPLOY_ENV must be staging or production');
   }
-  const databaseUrl = source.DATABASE_URL || '';
-  if (databaseUrl && !/[?&]connection_limit=\d+/.test(databaseUrl)) {
-    problems.push('DATABASE_URL must include connection_limit=10 (use the pooled URL)');
-  }
-  if (databaseUrl && !/[?&]pool_timeout=\d+/.test(databaseUrl)) {
-    problems.push('DATABASE_URL must include pool_timeout=20 (use the pooled URL)');
-  }
+  // connection_limit / pool_timeout are added by withConnectionPoolParams (server/prisma.ts).
+  // Site revalidation and Cloudinary photo uploads switch off on their own when unset.
   if (source.DEPLOY_ENV === 'production') {
     for (const origin of parsePublicSiteOrigins(source.PUBLIC_SITE_ORIGINS)) {
       if (originIsLocal(origin)) problems.push(`PUBLIC_SITE_ORIGINS must not include ${origin} in production`);

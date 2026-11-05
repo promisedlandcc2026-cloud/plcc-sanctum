@@ -43,10 +43,17 @@ describe('deployed configuration', () => {
       ALLOW_PLACEHOLDER: 'true',
     });
     expect(problems.some((item) => item.startsWith('APP_URL'))).toBe(true);
-    expect(problems.some((item) => item.includes('connection_limit'))).toBe(true);
-    expect(problems.some((item) => item.includes('pool_timeout'))).toBe(true);
     expect(problems.some((item) => item.includes('localhost'))).toBe(true);
     expect(problems.some((item) => item.includes('ALLOW_PLACEHOLDER'))).toBe(true);
+  });
+
+  it('leaves site revalidation and Cloudinary optional', () => {
+    const {
+      SITE_REVALIDATE_URL: _rv, REVALIDATE_SECRET: _rs,
+      CLOUDINARY_CLOUD_NAME: _cn, CLOUDINARY_API_KEY: _ck, CLOUDINARY_API_SECRET: _cs,
+      ...rest
+    } = complete;
+    expect(productionConfigProblems({ ...rest, DATABASE_URL: 'postgresql://u:p@host/db' })).toEqual([]);
   });
 
   it('leaves email and Sentry optional', () => {
