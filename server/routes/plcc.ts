@@ -31,7 +31,7 @@ export interface JordanRoomCount {
 
 /**
  * GET /api/plcc/jordan-rooms — church staff only.
- * Jordan's open prayer rooms with how many people are in each right now. Counts come
+ * Ka Link's open prayer rooms with how many people are in each right now. Counts come
  * from PLCC Canaan, which only gives them to this server (SANCTUM_SERVICE_KEY). The key
  * never reaches a browser. Without the key, rooms come back with count: null.
  */
@@ -182,7 +182,7 @@ function publicBridge(status: BridgeStatus | null) {
   };
 }
 
-/** GET /api/sessions/:id/bridge — public: is this overflow room hearing Jordan right now? */
+/** GET /api/sessions/:id/bridge — public: is this overflow room hearing Ka Link right now? */
 export async function bridgeStatusHandler(req: Request, res: Response): Promise<void> {
   try {
     res.setHeader('Cache-Control', 'no-store');
@@ -194,7 +194,7 @@ export async function bridgeStatusHandler(req: Request, res: Response): Promise<
 
 /**
  * POST /api/sessions/:id/bridge { jordanChannelId, jordanRoomTitle } — moderators: relay a
- * Jordan prayer room's audio into this live overflow room. DELETE stops it.
+ * Ka Link prayer room's audio into this live overflow room. DELETE stops it.
  */
 export async function bridgeStartHandler(req: Request, res: Response): Promise<void> {
   try {
@@ -252,9 +252,9 @@ export async function bridgeStopHandler(req: Request, res: Response): Promise<vo
 }
 
 /**
- * GET /api/overflow?jordanChannelId=… — public, read by PLCC Jordan when a prayer room is
+ * GET /api/overflow?jordanChannelId=… — public, read by PLCC Ka Link when a prayer room is
  * full. Answers with the Sanctum overflow room to send members to: first a room that is
- * relaying that Jordan room's audio, otherwise any live overflow room. No people or counts.
+ * relaying that Ka Link room's audio, otherwise any live overflow room. No people or counts.
  */
 export async function overflowForJordanHandler(req: Request, res: Response): Promise<void> {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -282,7 +282,7 @@ export async function overflowForJordanHandler(req: Request, res: Response): Pro
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
-    // Only open, public prayer rooms: members arriving from Jordan aren't signed in to Sanctum.
+    // Only open, public prayer rooms: members arriving from Ka Link aren't signed in to Sanctum.
     const usable = sessions.filter(
       (s) =>
         s.prayerRoom &&

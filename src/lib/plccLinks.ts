@@ -8,7 +8,7 @@ export const JORDAN_ORIGIN = trim(env.VITE_JORDAN_URL || 'https://plcc-chat.verc
 
 export const PLCC_ONE_URL = `${PLCC_ONE_ORIGIN}/#/launcher`;
 
-/** A Jordan room; a live one opens with its one-tap Join card. */
+/** A Ka Link room; a live one opens with its one-tap Join card. */
 export function jordanRoomUrl(roomId: string, live: boolean) {
   return `${JORDAN_ORIGIN}/community/chat/${encodeURIComponent(roomId)}${live ? '?huddle=join' : ''}`;
 }
@@ -22,7 +22,7 @@ export interface JordanRoom {
   capacity?: number | null;
 }
 
-/** Open (everyone) Jordan prayer rooms from PLCC Canaan. Empty when Canaan can't be reached. */
+/** Open (everyone) Ka Link prayer rooms from PLCC Canaan. Empty when Canaan can't be reached. */
 export async function fetchJordanRooms(signal?: AbortSignal): Promise<JordanRoom[]> {
   try {
     const response = await fetch(`${PLCC_ONE_ORIGIN}/api/vault?resource=live-prayer&rooms=1`, { signal });

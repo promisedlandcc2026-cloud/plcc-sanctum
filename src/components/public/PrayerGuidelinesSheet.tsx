@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldCheck, X } from 'lucide-react';
 
-/** Same guidelines sheet as PLCC Jordan's prayer room (styles from prayer-room.css). */
+/** Same guidelines sheet as PLCC Ka Link's prayer room (styles from prayer-room.css). */
 export function PrayerGuidelinesSheet({ onClose }: { onClose: () => void }) {
   const rules = [
     'This is an audio prayer room. Join with headphones if you can.',
@@ -9,7 +9,7 @@ export function PrayerGuidelinesSheet({ onClose }: { onClose: () => void }) {
     'Raise your hand to ask to pray. A moderator will invite you.',
     'Keep every prayer respectful, focused and kind.',
     'Never share private details about other people.',
-    'This overflow room opens when the main Jordan room is full.',
+    'This overflow room opens when the main Ka Link room is full.',
     'Moderators may mute or remove anyone to keep the room safe.',
   ];
   return (

@@ -174,7 +174,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
     const jordanRows: Row[] = jordan.map((room) => ({
       key: `jordan-${room.id}`,
       name: room.name,
-      where: 'Main prayer room · Jordan',
+      where: 'Main prayer room · Ka Link',
       kind: 'main',
       live: room.live,
       waiting: false,
@@ -247,10 +247,10 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
       if (bridge?.active) {
         const r = await sanctumApi.stopBridge(sanctumSessionId, actor);
         setBridge(r.bridge);
-        addToast('Stopped relaying Jordan audio.', 'info');
+        addToast('Stopped relaying Ka Link audio.', 'info');
       } else {
         const room = jordan.find((r) => r.id === bridgeChoice);
-        if (!room) throw new Error('Choose a Jordan prayer room.');
+        if (!room) throw new Error('Choose a Ka Link prayer room.');
         const r = await sanctumApi.startBridge(sanctumSessionId, room.id, room.name, actor);
         setBridge(r.bridge);
         addToast(`The overflow room now hears ${room.name}.`, 'success');
@@ -368,7 +368,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
           value={listenerCount + jordanPeople}
           note={
             jordanCounts
-              ? `${jordanPeople} in Jordan · ${listenerCount} in Sanctum`
+              ? `${jordanPeople} in Ka Link · ${listenerCount} in Sanctum`
               : sessionLive || sessionWaiting
                 ? `in ${liveRoom?.name || 'the Sanctum room'}`
                 : 'No one in Sanctum right now'
@@ -408,7 +408,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
               </h2>
               {sanctumSessionId && bridge?.active ? (
                 <span className="ops-checklist-ready">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden /> Ready — overflow is open and hearing Jordan
+                  <CheckCircle2 className="h-4 w-4" aria-hidden /> Ready — overflow is open and hearing Ka Link
                 </span>
               ) : null}
             </div>
@@ -416,11 +416,11 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
               <li className={cn('ops-step', sanctumSessionId && 'is-done')}>
                 <span className="ops-step-num">{sanctumSessionId ? <Check className="h-4 w-4" aria-hidden /> : 1}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="ops-step-title">Open the overflow room before Jordan fills up.</p>
+                  <p className="ops-step-title">Open the overflow room before Ka Link fills up.</p>
                   <p className="ops-step-note">
                     {sanctumSessionId
                       ? `Open: ${liveRoom?.name || liveSession?.roomName || 'overflow room'}.`
-                      : 'Jordan rooms hold 50 people. Members who can’t get in are offered this room.'}
+                      : 'Ka Link rooms hold 50 people. Members who can’t get in are offered this room.'}
                   </p>
                 </div>
                 {!sanctumSessionId ? (
@@ -436,12 +436,12 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
               <li className={cn('ops-step', bridge?.active && 'is-done')}>
                 <span className="ops-step-num">{bridge?.active ? <Check className="h-4 w-4" aria-hidden /> : 2}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="ops-step-title">Turn on the Jordan Audio Bridge in the Operations Center.</p>
+                  <p className="ops-step-title">Turn on the Ka Link Audio Bridge in the Operations Center.</p>
                   <p className="ops-step-note">
                     {bridge?.active
-                      ? `On: overflow hears ${bridge.jordanRoomTitle || 'Jordan'}.`
+                      ? `On: overflow hears ${bridge.jordanRoomTitle || 'Ka Link'}.`
                       : sanctumSessionId
-                        ? 'So the overflow hears the same live prayer. Uses one of Jordan’s 50 seats.'
+                        ? 'So the overflow hears the same live prayer. Uses one of Ka Link’s 50 seats.'
                         : 'Do step 1 first.'}
                   </p>
                 </div>
@@ -563,8 +563,8 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
               </div>
             )}
             <p className="border-t border-line px-5 py-3 text-[12px] text-muted">
-              Jordan rooms hold up to 50 people. When one fills, open the Sanctum overflow room.
-              {jordan.length && !jordanCounts ? ' Headcounts for Jordan rooms need SANCTUM_SERVICE_KEY on both servers.' : ''}
+              Ka Link rooms hold up to 50 people. When one fills, open the Sanctum overflow room.
+              {jordan.length && !jordanCounts ? ' Headcounts for Ka Link rooms need SANCTUM_SERVICE_KEY on both servers.' : ''}
             </p>
           </section>
 
@@ -625,9 +625,9 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
                 <StatusLine label="Audio Service (LiveKit)" state={health === undefined ? 'checking' : health?.livekit === 'configured' ? 'ok' : 'down'} />
                 <StatusLine label="Connection & Rooms" state={health === undefined ? 'checking' : health?.database === 'configured' ? 'ok' : 'down'} />
                 <StatusLine label="Sign-in" state={health === undefined ? 'checking' : health?.clerk === 'unavailable' ? 'down' : health ? 'ok' : 'down'} />
-                <StatusLine label="Jordan headcounts" state={!jordanLoaded ? 'checking' : jordanCounts ? 'ok' : 'off'} offLabel="Key not set" />
+                <StatusLine label="Ka Link headcounts" state={!jordanLoaded ? 'checking' : jordanCounts ? 'ok' : 'off'} offLabel="Key not set" />
                 <StatusLine
-                  label="Audio bridge (Jordan → Sanctum)"
+                  label="Audio bridge (Ka Link → Sanctum)"
                   state={bridge?.active ? 'ok' : bridge?.state === 'error' ? 'down' : 'off'}
                   offLabel={sanctumSessionId ? 'Not relaying' : 'Overflow closed'}
                   downLabel="Stopped — see bridge card"
@@ -642,11 +642,11 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
           <section id="ops-bridge" className="scroll-mt-4 rounded-3xl border border-line bg-card p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
               <Radio className="h-5 w-5" aria-hidden />
-              Jordan Audio Bridge
+              Ka Link Audio Bridge
             </h2>
             {!sanctumSessionId ? (
               <p className="mt-2 text-sm text-muted">
-                Start the overflow room, then relay a Jordan prayer room into it so overflow listeners hear the same prayer.
+                Start the overflow room, then relay a Ka Link prayer room into it so overflow listeners hear the same prayer.
               </p>
             ) : bridge?.active ? (
               <div className="mt-3 space-y-2">
@@ -657,7 +657,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
                 <p className="text-sm text-ink">
                   <strong>{bridge.jordanRoomTitle}</strong> → {liveRoom?.name || 'overflow room'}
                 </p>
-                <p className="text-xs text-muted">Uses one of the Jordan room's 50 seats.</p>
+                <p className="text-xs text-muted">Uses one of the Ka Link room's 50 seats.</p>
               </div>
             ) : (
               <div className="mt-3 space-y-2">
@@ -665,7 +665,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
                   <select
                     value={bridgeChoice}
                     onChange={(e) => setBridgeChoice(e.target.value)}
-                    aria-label="Jordan prayer room to relay"
+                    aria-label="Ka Link prayer room to relay"
                     className="min-h-[44px] w-full rounded-xl border border-line bg-paper px-3 text-sm font-semibold text-ink"
                   >
                     {jordan.map((r) => (
@@ -676,7 +676,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
                     ))}
                   </select>
                 ) : (
-                  <p className="text-sm text-muted">No Jordan rooms found.</p>
+                  <p className="text-sm text-muted">No Ka Link rooms found.</p>
                 )}
                 {bridge?.state === 'error' && bridge.error ? <p className="text-xs text-danger">{bridge.error}</p> : null}
               </div>
@@ -882,7 +882,7 @@ function PeopleCount({ row }: { row: Row }) {
 }
 
 function HandsCount({ row }: { row: Row }) {
-  if (row.hands === null) return <span className="text-xs text-muted">{row.kind === 'main' ? 'In Jordan' : '—'}</span>;
+  if (row.hands === null) return <span className="text-xs text-muted">{row.kind === 'main' ? 'In Ka Link' : '—'}</span>;
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[15px]">
       <Hand className="h-5 w-5 text-[#c9a35a]" aria-hidden />
@@ -906,9 +906,9 @@ function RowControls({ row, full }: { row: Row; full?: boolean }) {
           {row.manageLabel}
         </button>
       ) : (
-        <span className={cn('ops-btn is-ghost', full && 'flex-1')} title="Jordan rooms are managed inside the huddle">
+        <span className={cn('ops-btn is-ghost', full && 'flex-1')} title="Ka Link rooms are managed inside the huddle">
           <Settings2 className="h-4 w-4" aria-hidden />
-          In Jordan
+          In Ka Link
         </span>
       )}
       <div className="relative">

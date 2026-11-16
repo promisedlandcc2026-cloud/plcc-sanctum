@@ -126,7 +126,7 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
     };
   }, [announcementSessionId]);
 
-  // Live audio relayed from the main Jordan room (moderators start it in the Control Room).
+  // Live audio relayed from the main Ka Link room (moderators start it in the Control Room).
   useEffect(() => {
     if (!announcementSessionId) return;
     let cancelled = false;
@@ -571,7 +571,7 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
                     {floorHeld && speakingName ? (
                       <>Now praying: <strong>{speakingName}</strong></>
                     ) : jordanBridge?.active ? (
-                      'Live from the main Jordan prayer room • Audio Only'
+                      'Live from the main Ka Link prayer room • Audio Only'
                     ) : congregationMuted ? (
                       'Audio Only • By Moderator Approval'
                     ) : (
@@ -581,7 +581,7 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
                   {jordanBridge?.active ? (
                     <span className="pr-bridge is-live">
                       <Radio size={14} aria-hidden />
-                      Receiving live prayer from Jordan{jordanBridge.jordanRoomTitle ? ` · ${jordanBridge.jordanRoomTitle}` : ''}
+                      Receiving live prayer from Ka Link{jordanBridge.jordanRoomTitle ? ` · ${jordanBridge.jordanRoomTitle}` : ''}
                     </span>
                   ) : (
                     <span className="pr-bridge">
@@ -688,7 +688,7 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
                   <span className="pr-info-icon"><Info size={16} aria-hidden /></span>
                   Prayer Room Information
                 </h3>
-                <p className="pr-card-text">Overflow prayer room for our worldwide family when the main room reaches capacity.{jordanBridge?.active ? ' You are hearing the same live prayer as the main Jordan room.' : ''}</p>
+                <p className="pr-card-text">Overflow prayer room for our worldwide family when the main room reaches capacity.{jordanBridge?.active ? ' You are hearing the same live prayer as the main Ka Link room.' : ''}</p>
                 <ul className="pr-rules">
                   <li><Headphones size={22} aria-hidden />Audio only (no video)</li>
                   <li><MicOff size={22} aria-hidden />All participants are muted by default</li>

@@ -1,19 +1,19 @@
 /**
- * Jordan → Sanctum audio bridge.
+ * Ka Link → Sanctum audio bridge.
  *
- * One hidden, listen-only connection joins a PLCC Jordan Live Huddle room (it takes one
- * of Jordan's 50 seats), mixes everyone it hears into a single stream, and publishes that
- * stream into a live PLCC Sanctum overflow room as "Live from Jordan". Overflow listeners
+ * One hidden, listen-only connection joins a PLCC Ka Link Live Huddle room (it takes one
+ * of Ka Link's 50 seats), mixes everyone it hears into a single stream, and publishes that
+ * stream into a live PLCC Sanctum overflow room as "Live from Ka Link". Overflow listeners
  * then hear the same prayer as the main room.
  *
- * Jordan (PLCC Canaan) and Sanctum use the same LiveKit project (same LIVEKIT_URL), so
- * Sanctum mints the Jordan token itself with its own API key. Bridges live in memory on
+ * Ka Link (PLCC Canaan) and Sanctum use the same LiveKit project (same LIVEKIT_URL), so
+ * Sanctum mints the Ka Link token itself with its own API key. Bridges live in memory on
  * this server (one Render instance); a restart stops them and moderators start them again.
  */
 import { AccessToken } from 'livekit-server-sdk';
 import { env, isLiveKitConfigured } from '../env.ts';
 
-/** Same prefix PLCC Canaan uses for Jordan channel rooms (livekitVoice.VOICE_ROOM_PREFIX). */
+/** Same prefix PLCC Canaan uses for Ka Link channel rooms (livekitVoice.VOICE_ROOM_PREFIX). */
 export const JORDAN_ROOM_PREFIX = 'awc-channel-';
 export const BRIDGE_IDENTITY_PREFIX = 'plcc-sanctum-bridge';
 export const BRIDGE_PUBLISHER_PREFIX = 'jordan-bridge';
@@ -103,7 +103,7 @@ export async function startJordanBridge(input: {
 }): Promise<BridgeStatus> {
   if (!isLiveKitConfigured() || !env.livekitUrl) throw new Error('LiveKit is not configured on this server.');
   const channelId = String(input.jordanChannelId || '').trim();
-  if (!/^[0-9a-f-]{8,64}$/i.test(channelId)) throw new Error('Choose a Jordan prayer room.');
+  if (!/^[0-9a-f-]{8,64}$/i.test(channelId)) throw new Error('Choose a Ka Link prayer room.');
 
   await stopJordanBridge(input.sessionId);
 
@@ -113,7 +113,7 @@ export async function startJordanBridge(input: {
       sessionId: input.sessionId,
       jordanChannelId: channelId,
       jordanRoomName,
-      jordanRoomTitle: (input.jordanRoomTitle || 'Jordan prayer room').slice(0, 120),
+      jordanRoomTitle: (input.jordanRoomTitle || 'Ka Link prayer room').slice(0, 120),
       state: 'starting',
       speakers: 0,
       startedAt: new Date().toISOString(),
@@ -133,13 +133,13 @@ export async function startJordanBridge(input: {
     const sanctum = new Room();
     bridge.sanctum = sanctum;
     const source = new AudioSource(SAMPLE_RATE, CHANNELS);
-    const track = LocalAudioTrack.createAudioTrack('Live from Jordan', source);
+    const track = LocalAudioTrack.createAudioTrack('Live from Ka Link', source);
     await sanctum.connect(
       env.livekitUrl,
       await mintToken({
         roomName: input.sanctumRoomName,
         identity: `${BRIDGE_PUBLISHER_PREFIX}-${input.sessionId}`.slice(0, 120),
-        name: 'Live from Jordan',
+        name: 'Live from Ka Link',
         publish: true,
         hidden: false,
       }),
@@ -149,7 +149,7 @@ export async function startJordanBridge(input: {
     publishOptions.source = TrackSource.SOURCE_MICROPHONE;
     await sanctum.localParticipant!.publishTrack(track, publishOptions);
 
-    // 2) Mixer: everyone speaking in Jordan becomes one stream.
+    // 2) Mixer: everyone speaking in Ka Link becomes one stream.
     const mixer = new AudioMixer(SAMPLE_RATE, CHANNELS, { blocksize: SAMPLE_RATE / 100, streamTimeoutMs: 200 });
     bridge.mixer = mixer;
     void (async () => {
@@ -163,7 +163,7 @@ export async function startJordanBridge(input: {
       }
     })();
 
-    // 3) Hidden listener in the Jordan room.
+    // 3) Hidden listener in the Ka Link room.
     const jordan = new Room();
     bridge.jordan = jordan;
     const refreshState = () => {
@@ -195,7 +195,7 @@ export async function startJordanBridge(input: {
     jordan.on(RoomEvent.Disconnected, () => {
       if (bridge.stopping) return;
       bridge.status.state = 'error';
-      bridge.status.error = 'The Jordan room closed or the connection dropped.';
+      bridge.status.error = 'The Ka Link room closed or the connection dropped.';
       changed();
       void stopJordanBridge(input.sessionId, { keepStatus: true });
     });
@@ -216,7 +216,7 @@ export async function startJordanBridge(input: {
     const message = String(err?.message || err || 'Could not start the bridge.');
     bridge.status.state = 'error';
     bridge.status.error = /full|max/i.test(message)
-      ? 'The Jordan room is full (50 people). Free one seat for the bridge, then try again.'
+      ? 'The Ka Link room is full (50 people). Free one seat for the bridge, then try again.'
       : message.slice(0, 200);
     changed();
     await stopJordanBridge(input.sessionId, { keepStatus: true });
