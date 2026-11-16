@@ -31,6 +31,9 @@ services:
         value: church
       - key: PUBLIC_SITE_URL
         value: https://plcc-opal.vercel.app
+      # Same value as SANCTUM_SERVICE_KEY on PLCC Canaan (Vercel). Unlocks Jordan headcounts.
+      - key: SANCTUM_SERVICE_KEY
+        sync: false
       - key: PUBLIC_SITE_ORIGINS
         value: https://plcc-opal.vercel.app,https://sanctum-live-nine.vercel.app
       # Render's address for this service. If Render gives a different one, change it here.
