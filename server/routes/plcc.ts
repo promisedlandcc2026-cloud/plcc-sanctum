@@ -8,7 +8,7 @@ import { requireCanManageParticipants } from '../authz.ts';
 import { sendError } from '../http.ts';
 import { getPrisma } from '../prisma.ts';
 import { DatabaseUnavailable } from '../../shared/errors.ts';
-import { getBridgeStatus, startJordanBridge, stopJordanBridge, type BridgeStatus } from '../bridge/jordanBridge.ts';
+import { getBridgeStatus, listBridges, startJordanBridge, stopJordanBridge, type BridgeStatus } from '../bridge/jordanBridge.ts';
 import { broadcastSessionEvent } from '../realtime/ensureLiveKitRoom.ts';
 import {
   chatMessageRepository,
@@ -248,5 +248,69 @@ export async function bridgeStopHandler(req: Request, res: Response): Promise<vo
     res.json({ bridge: { active: false } });
   } catch (error) {
     sendError(res, error);
+  }
+}
+
+/**
+ * GET /api/overflow?jordanChannelId=… — public, read by PLCC Jordan when a prayer room is
+ * full. Answers with the Sanctum overflow room to send members to: first a room that is
+ * relaying that Jordan room's audio, otherwise any live overflow room. No people or counts.
+ */
+export async function overflowForJordanHandler(req: Request, res: Response): Promise<void> {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  try {
+    const channelId = typeof req.query.jordanChannelId === 'string' ? req.query.jordanChannelId.trim() : '';
+    const prisma = getPrisma();
+    if (!prisma) {
+      res.json({ available: false });
+      return;
+    }
+    const bridged = new Map(
+      listBridges()
+        .filter((b) => b.state === 'live' || b.state === 'waiting' || b.state === 'starting')
+        .map((b) => [b.sessionId, b] as const)
+    );
+    const sessions = await prisma.prayerSession.findMany({
+      where: { status: { in: ['LIVE', 'WAITING', 'STARTING'] } },
+      include: { prayerRoom: { select: { name: true, slug: true, status: true, kind: true, passcodeHash: true, allowGuests: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    // Only open, public prayer rooms: members arriving from Jordan aren't signed in to Sanctum.
+    const usable = sessions.filter(
+      (s) =>
+        s.prayerRoom &&
+        s.prayerRoom.status !== 'ARCHIVED' &&
+        s.prayerRoom.kind === 'CORPORATE' &&
+        !s.prayerRoom.passcodeHash &&
+        s.prayerRoom.allowGuests
+    );
+    const pick =
+      usable.find((s) => channelId && bridged.get(s.id)?.jordanChannelId === channelId) ||
+      usable.find((s) => s.status === 'LIVE' && bridged.has(s.id)) ||
+      usable.find((s) => s.status === 'LIVE') ||
+      usable[0];
+    if (!pick) {
+      res.json({ available: false });
+      return;
+    }
+    const proto = String(req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+    const origin = `${proto}://${req.get('host')}`;
+    const bridge = bridged.get(pick.id);
+    res.json({
+      available: true,
+      roomName: pick.prayerRoom.name,
+      joinUrl: `${origin}/join/${encodeURIComponent(pick.prayerRoom.slug)}?from=jordan`,
+      status: pick.status,
+      hearsJordan: Boolean(bridge && (!channelId || bridge.jordanChannelId === channelId)),
+    });
+  } catch {
+    res.json({ available: false });
   }
 }
