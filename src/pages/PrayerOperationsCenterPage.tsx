@@ -399,6 +399,66 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_17.5rem]">
         <div className="min-w-0 space-y-5">
+          {/* Busy-gathering checklist (always visible to moderators, pastors and admins) */}
+          <section className="ops-checklist" aria-labelledby="ops-checklist-title">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 id="ops-checklist-title" className="flex items-center gap-2 text-lg font-extrabold">
+                <Users className="h-5 w-5" aria-hidden />
+                For a busy gathering, moderators should:
+              </h2>
+              {sanctumSessionId && bridge?.active ? (
+                <span className="ops-checklist-ready">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden /> Ready — overflow is open and hearing Jordan
+                </span>
+              ) : null}
+            </div>
+            <ol className="mt-3 grid gap-3 md:grid-cols-2">
+              <li className={cn('ops-step', sanctumSessionId && 'is-done')}>
+                <span className="ops-step-num">{sanctumSessionId ? <Check className="h-4 w-4" aria-hidden /> : 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="ops-step-title">Open the overflow room before Jordan fills up.</p>
+                  <p className="ops-step-note">
+                    {sanctumSessionId
+                      ? `Open: ${liveRoom?.name || liveSession?.roomName || 'overflow room'}.`
+                      : 'Jordan rooms hold 50 people. Members who can’t get in are offered this room.'}
+                  </p>
+                </div>
+                {!sanctumSessionId ? (
+                  <button
+                    type="button"
+                    onClick={() => (overflowRoom ? onNavigate(`/dashboard/prayer-rooms/${overflowRoom.id}/control`) : onNavigate('/dashboard/prayer-rooms/new'))}
+                    className="ops-btn is-green shrink-0"
+                  >
+                    {overflowRoom ? 'Open overflow' : 'Create overflow'}
+                  </button>
+                ) : null}
+              </li>
+              <li className={cn('ops-step', bridge?.active && 'is-done')}>
+                <span className="ops-step-num">{bridge?.active ? <Check className="h-4 w-4" aria-hidden /> : 2}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="ops-step-title">Turn on the Jordan Audio Bridge in the Operations Center.</p>
+                  <p className="ops-step-note">
+                    {bridge?.active
+                      ? `On: overflow hears ${bridge.jordanRoomTitle || 'Jordan'}.`
+                      : sanctumSessionId
+                        ? 'So the overflow hears the same live prayer. Uses one of Jordan’s 50 seats.'
+                        : 'Do step 1 first.'}
+                  </p>
+                </div>
+                {!bridge?.active ? (
+                  <button
+                    type="button"
+                    disabled={!sanctumSessionId}
+                    onClick={() => document.getElementById('ops-bridge')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="ops-btn is-gold shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Turn on bridge
+                  </button>
+                ) : null}
+              </li>
+            </ol>
+          </section>
+
           {/* Live Prayer Rooms */}
           <section id="ops-rooms" className="scroll-mt-4 overflow-hidden rounded-3xl border border-line bg-card shadow-sm">
             <header className="flex flex-col gap-3 bg-[#0f3d2c] px-5 py-3.5 text-[#f6f1e6] sm:flex-row sm:items-center sm:justify-between">
@@ -579,7 +639,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
 
         {/* Right rail */}
         <aside className="grid gap-5 md:grid-cols-2 xl:flex xl:flex-col">
-          <section className="rounded-3xl border border-line bg-card p-5 shadow-sm">
+          <section id="ops-bridge" className="scroll-mt-4 rounded-3xl border border-line bg-card p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
               <Radio className="h-5 w-5" aria-hidden />
               Jordan Audio Bridge
