@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { isBridgeIdentity } from '../bridge/jordanBridge.ts';
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { Unauthorized } from '../../shared/errors.ts';
 import { env, isLiveKitConfigured } from '../env.ts';
@@ -53,7 +54,7 @@ export async function livekitWebhookHandler(req: Request, res: Response): Promis
       const session = await sessionRepository.findByLiveKitRoomName(roomName);
       if (session) {
         const live = await getLiveKitProvider().listParticipants(roomName);
-        await sessionRepository.bumpPeakConcurrent(session.id, live.length);
+        await sessionRepository.bumpPeakConcurrent(session.id, live.filter((p) => !isBridgeIdentity(p.identity)).length);
 
         const identity = event.participant?.identity;
         if (identity && (event.event === 'participant_left' || event.event === 'participant_connection_aborted')) {

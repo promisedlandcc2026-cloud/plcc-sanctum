@@ -80,6 +80,7 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
   const [peopleSearchOpen, setPeopleSearchOpen] = useState(false);
   const [listenOnly, setListenOnly] = useState(false);
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
+  const [jordanBridge, setJordanBridge] = useState<{ active: boolean; jordanRoomTitle?: string; speakers?: number } | null>(null);
   const [announcement, setAnnouncement] = useState<{ id: string; body: string; from: string; at: string } | null>(null);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState<string | null>(null);
   const { startTour } = useTour(TOUR_IDS.listenerRoom, listenerRoomTourSteps, { delayMs: 900 });
@@ -122,6 +123,27 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
       .catch(() => undefined);
     return () => {
       cancelled = true;
+    };
+  }, [announcementSessionId]);
+
+  // Live audio relayed from the main Jordan room (moderators start it in the Control Room).
+  useEffect(() => {
+    if (!announcementSessionId) return;
+    let cancelled = false;
+    sanctumApi
+      .bridgeStatus(announcementSessionId)
+      .then((result) => {
+        if (!cancelled) setJordanBridge(result.bridge);
+      })
+      .catch(() => undefined);
+    const unsubscribe = livekitRealtimeProvider.subscribe((event) => {
+      if (event.type !== 'BRIDGE_CHANGED') return;
+      const info = event.metadata as { active?: boolean; jordanRoomTitle?: string; speakers?: number } | undefined;
+      setJordanBridge(info ? { active: info.active === true, jordanRoomTitle: info.jordanRoomTitle, speakers: info.speakers } : null);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
     };
   }, [announcementSessionId]);
 
@@ -531,13 +553,13 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
               ) : (
                 <div className="pr-stage">
                   <div className="pr-orb-row">
-                    <span className={`pr-wave is-left ${floorHeld || speaking ? 'is-active' : ''}`} aria-hidden>
+                    <span className={`pr-wave is-left ${floorHeld || speaking || (jordanBridge?.active && (jordanBridge.speakers || 0) > 0) ? 'is-active' : ''}`} aria-hidden>
                       {Array.from({ length: 9 }).map((_, n) => <i key={n} style={{ animationDelay: `${n * 0.11}s` }} />)}
                     </span>
                     <span className={`pr-orb ${orbState === 'open' ? 'is-open' : ''} ${orbState === 'speaking' ? 'is-open is-speaking' : ''}`}>
                       {orbState === 'muted' ? <MicOff aria-hidden /> : <Mic aria-hidden />}
                     </span>
-                    <span className={`pr-wave ${floorHeld || speaking ? 'is-active' : ''}`} aria-hidden>
+                    <span className={`pr-wave ${floorHeld || speaking || (jordanBridge?.active && (jordanBridge.speakers || 0) > 0) ? 'is-active' : ''}`} aria-hidden>
                       {Array.from({ length: 9 }).map((_, n) => <i key={n} style={{ animationDelay: `${n * 0.11}s` }} />)}
                     </span>
                   </div>
@@ -548,17 +570,25 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
                   <p className="pr-hint">
                     {floorHeld && speakingName ? (
                       <>Now praying: <strong>{speakingName}</strong></>
+                    ) : jordanBridge?.active ? (
+                      'Live from the main Jordan prayer room • Audio Only'
                     ) : congregationMuted ? (
                       'Audio Only • By Moderator Approval'
                     ) : (
                       'Audio Only • The floor is open'
                     )}
                   </p>
-                  {/* The audio bridge from Jordan is not built yet: say so honestly. */}
-                  <span className="pr-bridge">
-                    <Radio size={14} aria-hidden />
-                    {sermonLeader ? `Overflow room led by ${sermonLeader}` : 'Overflow room with its own prayer leaders'}
-                  </span>
+                  {jordanBridge?.active ? (
+                    <span className="pr-bridge is-live">
+                      <Radio size={14} aria-hidden />
+                      Receiving live prayer from Jordan{jordanBridge.jordanRoomTitle ? ` · ${jordanBridge.jordanRoomTitle}` : ''}
+                    </span>
+                  ) : (
+                    <span className="pr-bridge">
+                      <Radio size={14} aria-hidden />
+                      {sermonLeader ? `Overflow room led by ${sermonLeader}` : 'Overflow room with its own prayer leaders'}
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -658,7 +688,7 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
                   <span className="pr-info-icon"><Info size={16} aria-hidden /></span>
                   Prayer Room Information
                 </h3>
-                <p className="pr-card-text">Overflow prayer room for our worldwide family when the main room reaches capacity.</p>
+                <p className="pr-card-text">Overflow prayer room for our worldwide family when the main room reaches capacity.{jordanBridge?.active ? ' You are hearing the same live prayer as the main Jordan room.' : ''}</p>
                 <ul className="pr-rules">
                   <li><Headphones size={22} aria-hidden />Audio only (no video)</li>
                   <li><MicOff size={22} aria-hidden />All participants are muted by default</li>

@@ -31,7 +31,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { ROLE_CAPABILITIES } from '../lib/permissions';
-import { fetchHealth, sanctumApi, type ApiHealth } from '../services/api/sanctumApi';
+import { fetchHealth, sanctumApi, type ApiHealth, type JordanBridgeInfo } from '../services/api/sanctumApi';
 import { BROADCAST_MAX } from '../../shared/broadcast.ts';
 import { fetchJordanRooms, JORDAN_ORIGIN, jordanRoomUrl, PLCC_ONE_URL, type JordanRoom } from '../lib/plccLinks';
 import { cn } from '../lib/utils';
@@ -127,6 +127,10 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
   const [broadcastText, setBroadcastText] = useState('');
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [lastBroadcast, setLastBroadcast] = useState<{ text: string; at: string; room: string } | null>(null);
+  const [bridge, setBridge] = useState<JordanBridgeInfo | null>(null);
+  const [bridgeChoice, setBridgeChoice] = useState('');
+  const [bridgeBusy, setBridgeBusy] = useState(false);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -209,6 +213,54 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
   const liveCount = rows.filter((r) => r.live).length;
   const jordanPeople = jordanCounts ? jordan.reduce((sum, r) => sum + (r.count || 0), 0) : 0;
   const sanctumSessionId = sessionLive || sessionWaiting ? liveSession?.id : undefined;
+
+  useEffect(() => {
+    if (!sanctumSessionId) {
+      setBridge(null);
+      return;
+    }
+    let cancelled = false;
+    const load = () =>
+      sanctumApi
+        .bridgeStatus(sanctumSessionId)
+        .then((r) => !cancelled && setBridge(r.bridge))
+        .catch(() => undefined);
+    void load();
+    const timer = window.setInterval(load, 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [sanctumSessionId]);
+
+  useEffect(() => {
+    if (bridgeChoice || !jordan.length) return;
+    setBridgeChoice((jordan.find((r) => r.live) || jordan[0]).id);
+  }, [jordan, bridgeChoice]);
+
+  const toggleBridge = async () => {
+    if (!sanctumSessionId || bridgeBusy) return;
+    setBridgeBusy(true);
+    setBridgeError(null);
+    const actor = { userId: user?.id, organizationId: organization?.id };
+    try {
+      if (bridge?.active) {
+        const r = await sanctumApi.stopBridge(sanctumSessionId, actor);
+        setBridge(r.bridge);
+        addToast('Stopped relaying Jordan audio.', 'info');
+      } else {
+        const room = jordan.find((r) => r.id === bridgeChoice);
+        if (!room) throw new Error('Choose a Jordan prayer room.');
+        const r = await sanctumApi.startBridge(sanctumSessionId, room.id, room.name, actor);
+        setBridge(r.bridge);
+        addToast(`The overflow room now hears ${room.name}.`, 'success');
+      }
+    } catch (err: any) {
+      setBridgeError(err?.message || 'Could not change the bridge.');
+    } finally {
+      setBridgeBusy(false);
+    }
+  };
 
   const sendBroadcast = async () => {
     const text = broadcastText.trim();
@@ -514,7 +566,12 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
                 <StatusLine label="Connection & Rooms" state={health === undefined ? 'checking' : health?.database === 'configured' ? 'ok' : 'down'} />
                 <StatusLine label="Sign-in" state={health === undefined ? 'checking' : health?.clerk === 'unavailable' ? 'down' : health ? 'ok' : 'down'} />
                 <StatusLine label="Jordan headcounts" state={!jordanLoaded ? 'checking' : jordanCounts ? 'ok' : 'off'} offLabel="Key not set" />
-                <StatusLine label="Audio bridge (Jordan → Sanctum)" state="off" offLabel="Not set up yet" />
+                <StatusLine
+                  label="Audio bridge (Jordan → Sanctum)"
+                  state={bridge?.active ? 'ok' : bridge?.state === 'error' ? 'down' : 'off'}
+                  offLabel={sanctumSessionId ? 'Not relaying' : 'Overflow closed'}
+                  downLabel="Stopped — see bridge card"
+                />
               </ul>
             </section>
           </div>
@@ -522,6 +579,61 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
 
         {/* Right rail */}
         <aside className="grid gap-5 md:grid-cols-2 xl:flex xl:flex-col">
+          <section className="rounded-3xl border border-line bg-card p-5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
+              <Radio className="h-5 w-5" aria-hidden />
+              Jordan Audio Bridge
+            </h2>
+            {!sanctumSessionId ? (
+              <p className="mt-2 text-sm text-muted">
+                Start the overflow room, then relay a Jordan prayer room into it so overflow listeners hear the same prayer.
+              </p>
+            ) : bridge?.active ? (
+              <div className="mt-3 space-y-2">
+                <p className="flex items-center gap-2 text-sm font-bold text-[#1f6e3f] dark:text-[#9fd8b5]">
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#2f9d5c]" aria-hidden />
+                  {bridge.state === 'live' ? 'Relaying live' : 'Connected — waiting for someone to pray'}
+                </p>
+                <p className="text-sm text-ink">
+                  <strong>{bridge.jordanRoomTitle}</strong> → {liveRoom?.name || 'overflow room'}
+                </p>
+                <p className="text-xs text-muted">Uses one of the Jordan room's 50 seats.</p>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {jordan.length ? (
+                  <select
+                    value={bridgeChoice}
+                    onChange={(e) => setBridgeChoice(e.target.value)}
+                    aria-label="Jordan prayer room to relay"
+                    className="min-h-[44px] w-full rounded-xl border border-line bg-paper px-3 text-sm font-semibold text-ink"
+                  >
+                    {jordan.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                        {r.live ? ' (live)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-muted">No Jordan rooms found.</p>
+                )}
+                {bridge?.state === 'error' && bridge.error ? <p className="text-xs text-danger">{bridge.error}</p> : null}
+              </div>
+            )}
+            {bridgeError ? <p className="mt-2 text-xs text-danger">{bridgeError}</p> : null}
+            {sanctumSessionId && caps?.canMuteSpeakers ? (
+              <button
+                type="button"
+                onClick={() => void toggleBridge()}
+                disabled={bridgeBusy || (!bridge?.active && !jordan.length)}
+                className={cn('mt-3 w-full', bridge?.active ? 'ops-btn is-ghost !cursor-pointer !border-solid' : 'ops-btn is-green')}
+              >
+                {bridgeBusy ? 'Working…' : bridge?.active ? 'Stop relaying' : 'Relay into overflow room'}
+              </button>
+            ) : null}
+          </section>
+
           <section className="rounded-3xl border border-line bg-card p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
               <ShieldCheck className="h-5 w-5" aria-hidden />

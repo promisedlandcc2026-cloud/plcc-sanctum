@@ -8,6 +8,7 @@ import { requireCanManageParticipants } from '../authz.ts';
 import { sendError } from '../http.ts';
 import { getPrisma } from '../prisma.ts';
 import { DatabaseUnavailable } from '../../shared/errors.ts';
+import { getBridgeStatus, startJordanBridge, stopJordanBridge, type BridgeStatus } from '../bridge/jordanBridge.ts';
 import { broadcastSessionEvent } from '../realtime/ensureLiveKitRoom.ts';
 import {
   chatMessageRepository,
@@ -163,6 +164,88 @@ export async function auditListHandler(req: Request, res: Response): Promise<voi
         createdAt: r.createdAt.toISOString(),
       })),
     });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+function publicBridge(status: BridgeStatus | null) {
+  if (!status || status.state === 'stopped') return { active: false };
+  return {
+    active: status.state === 'live' || status.state === 'waiting' || status.state === 'starting',
+    state: status.state,
+    jordanRoomTitle: status.jordanRoomTitle,
+    jordanChannelId: status.jordanChannelId,
+    speakers: status.speakers,
+    startedAt: status.startedAt,
+    error: status.error || null,
+  };
+}
+
+/** GET /api/sessions/:id/bridge — public: is this overflow room hearing Jordan right now? */
+export async function bridgeStatusHandler(req: Request, res: Response): Promise<void> {
+  try {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ bridge: publicBridge(getBridgeStatus(String(req.params.id))) });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+/**
+ * POST /api/sessions/:id/bridge { jordanChannelId, jordanRoomTitle } — moderators: relay a
+ * Jordan prayer room's audio into this live overflow room. DELETE stops it.
+ */
+export async function bridgeStartHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const session = await sessionRepository.requireById(req.params.id);
+    if (!isJoinableSessionStatus(session.status)) throw SessionNotJoinable(session.status);
+    const room = await prayerRoomRepository.findById(session.prayerRoomId);
+    if (!room) throw RoomNotFound(session.prayerRoomId);
+    const actor = await resolveActorFromRequest(req, room.organizationId);
+    requireCanManageParticipants(actor);
+    if (!session.livekitRoomName) throw Unauthorized('Start the overflow session first.');
+    const channelId = typeof req.body?.jordanChannelId === 'string' ? req.body.jordanChannelId.trim() : '';
+    const title = typeof req.body?.jordanRoomTitle === 'string' ? req.body.jordanRoomTitle.trim() : '';
+    const startedBy = actor.userId ? await userRepository.findNameById(actor.userId) : null;
+    const livekitRoomName = session.livekitRoomName;
+    const notify = (status: BridgeStatus) => {
+      void broadcastSessionEvent(livekitRoomName, 'BRIDGE_CHANGED', {
+        sessionId: session.id,
+        metadata: publicBridge(status),
+      });
+    };
+    let status: BridgeStatus;
+    try {
+      status = await startJordanBridge({
+        sessionId: session.id,
+        sanctumRoomName: livekitRoomName,
+        jordanChannelId: channelId,
+        jordanRoomTitle: title,
+        startedBy,
+        onChange: notify,
+      });
+    } catch (err: any) {
+      res.status(409).json({ error: 'BRIDGE_FAILED', message: String(err?.message || 'Could not start the bridge.') });
+      return;
+    }
+    notify(status);
+    res.status(201).json({ bridge: publicBridge(status) });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+export async function bridgeStopHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const session = await sessionRepository.requireById(req.params.id);
+    const room = await prayerRoomRepository.findById(session.prayerRoomId);
+    if (!room) throw RoomNotFound(session.prayerRoomId);
+    const actor = await resolveActorFromRequest(req, room.organizationId);
+    requireCanManageParticipants(actor);
+    await stopJordanBridge(session.id);
+    await broadcastSessionEvent(session.livekitRoomName, 'BRIDGE_CHANGED', { sessionId: session.id, metadata: { active: false } });
+    res.json({ bridge: { active: false } });
   } catch (error) {
     sendError(res, error);
   }

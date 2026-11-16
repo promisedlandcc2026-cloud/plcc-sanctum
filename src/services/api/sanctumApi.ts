@@ -82,6 +82,16 @@ export function healthToEngineStatus(health: ApiHealth | null): RealtimeEngineSt
   return health.livekit === 'configured' ? 'configured' : 'not_configured';
 }
 
+export interface JordanBridgeInfo {
+  active: boolean;
+  state?: 'starting' | 'live' | 'waiting' | 'stopped' | 'error';
+  jordanRoomTitle?: string;
+  jordanChannelId?: string;
+  speakers?: number;
+  startedAt?: string;
+  error?: string | null;
+}
+
 export const sanctumApi = {
   fetchHealth,
   fetchMe: () =>
@@ -278,6 +288,15 @@ export const sanctumApi = {
       method: 'POST',
       body: JSON.stringify({ message }),
     }, staff(actor)),
+  bridgeStatus: (sessionId: string) =>
+    apiFetch<{ bridge: JordanBridgeInfo }>(`/api/sessions/${sessionId}/bridge`),
+  startBridge: (sessionId: string, jordanChannelId: string, jordanRoomTitle: string, actor: Actor) =>
+    apiFetch<{ bridge: JordanBridgeInfo }>(`/api/sessions/${sessionId}/bridge`, {
+      method: 'POST',
+      body: JSON.stringify({ jordanChannelId, jordanRoomTitle }),
+    }, staff(actor)),
+  stopBridge: (sessionId: string, actor: Actor) =>
+    apiFetch<{ bridge: JordanBridgeInfo }>(`/api/sessions/${sessionId}/bridge`, { method: 'DELETE' }, staff(actor)),
   auditEvents: (actor: Actor) =>
     apiFetch<{
       events: Array<{ id: string; action: string; actorName: string | null; roomName: string | null; targetName: string | null; createdAt: string }>;

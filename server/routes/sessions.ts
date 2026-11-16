@@ -30,6 +30,7 @@ import {
   userRepository,
 } from '../repositories/index.ts';
 import { createSpeakerFloorService } from '../services/createSpeakerFloorService.ts';
+import { isBridgeIdentity, stopJordanBridge } from '../bridge/jordanBridge.ts';
 import {
   clearSessionLiveState,
   getSessionLiveState,
@@ -191,6 +192,7 @@ export async function endPrayerSessionHandler(req: Request, res: Response): Prom
     }
 
     clearSessionLiveState(session.id);
+    await stopJordanBridge(session.id);
     await broadcastSessionEvent(session.livekitRoomName, 'SESSION_ENDED', { sessionId: session.id });
 
     if (session.status === 'ENDING' || session.status === 'LIVE') {
@@ -250,7 +252,7 @@ export async function getSessionSnapshotHandler(req: Request, res: Response): Pr
     let connectedNow = participants.filter((p) => !p.leftAt).length;
     if (isLiveKitConfigured() && session.livekitRoomName) {
       const live = await getLiveKitProvider().listParticipants(session.livekitRoomName);
-      connectedNow = live.length;
+      connectedNow = live.filter((p) => !isBridgeIdentity(p.identity)).length;
     }
 
     const prisma = getPrisma();
