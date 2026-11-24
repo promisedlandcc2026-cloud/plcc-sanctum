@@ -46,6 +46,7 @@ export class LiveKitRealtimeProvider implements IRealtimeProvider {
   private room: Room | null = null;
   private listeners = new Set<RealtimeEventListener>();
   private audioElements = new Map<string, HTMLAudioElement>();
+  private playbackMuted = false;
   private sessionId = '';
   private kit: LiveKitModule | null = null;
   connectionState: ConnectionState = 'DISCONNECTED';
@@ -99,6 +100,13 @@ export class LiveKitRealtimeProvider implements IRealtimeProvider {
       participantId: this.room.localParticipant.identity,
       connectionQuality: 'GOOD',
     };
+  }
+
+  setPlaybackMuted(muted: boolean): void {
+    this.playbackMuted = muted;
+    this.audioElements.forEach((element) => {
+      element.muted = muted;
+    });
   }
 
   async tryStartAudio(): Promise<boolean> {
@@ -438,7 +446,7 @@ export class LiveKitRealtimeProvider implements IRealtimeProvider {
     el.autoplay = true;
     el.setAttribute('playsinline', 'true');
     el.volume = 1;
-    el.muted = false;
+    el.muted = this.playbackMuted;
     el.style.display = 'none';
     document.body.appendChild(el);
     this.audioElements.set(identity, el);
