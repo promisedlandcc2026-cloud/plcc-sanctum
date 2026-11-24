@@ -48,7 +48,7 @@ type Item = {
 };
 
 /**
- * PLCC Sanctum moderator sidebar (approved "Prayer Operations Center" mockup):
+ * PLCC Sanctum moderator sidebar:
  * forest green, gold active item, emblem + PLCC SANCTUM, kente corner.
  * Church website tools sit in their own group underneath.
  */
@@ -75,12 +75,17 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ currentPath,
 
   const goRooms = () => {
     onNavigate('/dashboard');
-    window.setTimeout(() => document.getElementById('ops-rooms')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+    window.setTimeout(() => {
+      const directory = document.querySelector<HTMLDetailsElement>('details#ops-rooms');
+      if (!directory) return;
+      directory.open = true;
+      directory.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
   };
 
   const moderatorItems: Item[] = [
-    { label: 'Control Room', path: '/dashboard', icon: LayoutGrid, active: currentPath === '/dashboard', tour: 'dashboard-nav' },
-    { label: 'Live Rooms', icon: Radio, onClick: goRooms },
+    { label: 'Prayer Overflow', path: '/dashboard', icon: LayoutGrid, active: currentPath === '/dashboard', tour: 'dashboard-nav' },
+    { label: 'All Rooms', icon: Radio, onClick: goRooms },
     { label: 'Participants', path: '/dashboard/participants', icon: Users },
     {
       label: 'Raised Hands',
@@ -191,7 +196,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ currentPath,
           {collapsed ? null : <span>Back to PLCC ONE</span>}
         </a>
         {prayerRooms.length === 0 && !mediaOnly && !collapsed ? (
-          <p className="ops-side-note">No prayer rooms yet — create one from the Control Room.</p>
+          <p className="ops-side-note">No prayer rooms yet. Open Prayer Overflow to create one.</p>
         ) : null}
       </div>
       <div className="ops-side-kente" aria-hidden />

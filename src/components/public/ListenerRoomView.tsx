@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { loadJoinSession } from '../../services/realtime/joinSessionStore';
 import { churchSiteUrl } from '../../lib/appMode';
 import { ConnectionStatus } from '../common/ConnectionStatus';
@@ -10,7 +10,7 @@ import { PostPrayerSummaryView } from './PostPrayerSummaryView';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { isClientMinister } from '../../lib/permissions';
-import { LogOut, Volume2, LayoutDashboard, Mic, MicOff, CircleHelp, Hand, Headphones, Check, Users, Info, ShieldCheck, Search, Megaphone, X, Radio, LayoutGrid, HandHeart, BookHeart, Crown } from 'lucide-react';
+import { LogOut, Volume2, LayoutDashboard, Mic, MicOff, CircleHelp, Hand, Headphones, Check, Users, Info, ShieldCheck, Search, Megaphone, X, Radio, LayoutGrid, HandHeart, BookHeart, BookOpen, Crown, VolumeX } from 'lucide-react';
 import { sanctumApi } from '../../services/api/sanctumApi';
 import { livekitRealtimeProvider } from '../../services/realtime/livekitRealtimeProvider';
 import { connectionStateToQuality } from '../../services/domain/sessionSnapshot';
@@ -22,6 +22,8 @@ import { resolveSermonLeader } from '../../../shared/joinDisplay.ts';
 import { PLCC_ONE_ORIGIN } from '../../lib/plccLinks';
 import { PrayerGuidelinesSheet } from './PrayerGuidelinesSheet';
 import { broadcastSender, isBroadcastName } from '../../../shared/broadcast.ts';
+
+const BibleReader = lazy(() => import('../bible/BibleReader').then(({ BibleReader }) => ({ default: BibleReader })));
 
 interface ListenerRoomViewProps {
   participantName: string;
@@ -79,11 +81,37 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
   const [participantQuery, setParticipantQuery] = useState('');
   const [peopleSearchOpen, setPeopleSearchOpen] = useState(false);
   const [listenOnly, setListenOnly] = useState(false);
+  const [bibleOpen, setBibleOpen] = useState(false);
+  const [bibleVisited, setBibleVisited] = useState(false);
+  const [playbackMuted, setPlaybackMuted] = useState(false);
+  const bibleButton = useRef<HTMLButtonElement>(null);
+  const bibleHeading = useRef<HTMLHeadingElement>(null);
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
   const [jordanBridge, setJordanBridge] = useState<{ active: boolean; jordanRoomTitle?: string; speakers?: number } | null>(null);
   const [announcement, setAnnouncement] = useState<{ id: string; body: string; from: string; at: string } | null>(null);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState<string | null>(null);
   const { startTour } = useTour(TOUR_IDS.listenerRoom, listenerRoomTourSteps, { delayMs: 900 });
+
+  useEffect(() => {
+    if (!bibleOpen) return;
+    const heading = bibleHeading.current;
+    heading?.focus({ preventScroll: true });
+    heading?.closest('section')?.scrollIntoView({ block: window.matchMedia('(min-width: 1024px)').matches ? 'nearest' : 'start' });
+  }, [bibleOpen]);
+
+  useEffect(() => () => livekitRealtimeProvider.setPlaybackMuted(false), []);
+
+  const closeBible = () => {
+    setBibleOpen(false);
+    bibleButton.current?.focus();
+  };
+
+  const togglePlayback = () => {
+    const muted = !playbackMuted;
+    livekitRealtimeProvider.setPlaybackMuted(muted);
+    setPlaybackMuted(muted);
+    if (!muted && audioBlocked) void enablePrayerAudio();
+  };
 
   useEffect(() => {
     const stored = loadJoinSession();
@@ -504,6 +532,30 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
                 </div>
               </div>
 
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <button
+                  ref={bibleButton}
+                  type="button"
+                  aria-expanded={bibleOpen}
+                  aria-controls={bibleVisited ? 'sanctum-bible' : undefined}
+                  onClick={() => {
+                    if (bibleOpen) closeBible();
+                    else {
+                      setBibleVisited(true);
+                      setBibleOpen(true);
+                    }
+                  }}
+                  className="pr-tool min-h-[44px] cursor-pointer"
+                >
+                  <BookOpen size={18} aria-hidden /> Bible
+                </button>
+                {playbackMuted && !bibleOpen ? (
+                  <button type="button" onClick={togglePlayback} className="pr-tool min-h-[44px] cursor-pointer">
+                    <VolumeX size={18} aria-hidden /> Unmute audio
+                  </button>
+                ) : null}
+              </div>
+
               {announcement && dismissedAnnouncement !== announcement.id ? (
                 <div role="status" aria-live="polite" className="pr-announce">
                   <span className="pr-info-icon" style={{ width: 40, height: 40 }}><Megaphone className="h-5 w-5" aria-hidden /></span>
@@ -683,6 +735,48 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
             </main>
 
             <aside className="pr-side">
+              {bibleVisited ? (
+                <section
+                  id="sanctum-bible"
+                  aria-labelledby="sanctum-bible-title"
+                  hidden={!bibleOpen}
+                  className="pr-card min-w-0 scroll-mt-2"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape' && !event.defaultPrevented) {
+                      event.stopPropagation();
+                      closeBible();
+                    }
+                  }}
+                >
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#eadfca] pb-3">
+                    <div className="min-w-0">
+                      <h2 id="sanctum-bible-title" ref={bibleHeading} tabIndex={-1} className="pr-card-title">
+                        <BookOpen size={20} aria-hidden /> Bible
+                      </h2>
+                      <p className="mt-1 text-sm font-semibold text-[#4a5a52]">
+                        {gatheringName} · {connectionState === 'RECONNECTING' ? 'Reconnecting' : liveConnected && prayerHasStarted ? 'Live' : 'Waiting'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={togglePlayback} aria-pressed={playbackMuted} className="pr-tool min-h-[44px] cursor-pointer">
+                        {playbackMuted ? <VolumeX size={18} aria-hidden /> : <Volume2 size={18} aria-hidden />} Mute audio
+                      </button>
+                      <button type="button" onClick={onLeave} className="pr-tool min-h-[44px] cursor-pointer">Leave</button>
+                      <button type="button" onClick={closeBible} aria-label="Close Bible" className="pr-tool min-h-[44px] min-w-[44px] cursor-pointer">
+                        <X size={18} aria-hidden />
+                      </button>
+                    </div>
+                  </div>
+                  {audioBlocked && !playbackMuted ? (
+                    <button type="button" onClick={() => void enablePrayerAudio()} className="pr-tool mb-3 min-h-[44px] cursor-pointer">Enable prayer audio</button>
+                  ) : null}
+                  <div tabIndex={0} role="region" aria-label="Bible reader" className="max-h-[calc(100dvh-11rem)] min-h-48 overflow-y-auto overscroll-contain">
+                    <Suspense fallback={<p role="status" className="py-4">Loading Bible…</p>}>
+                      <BibleReader />
+                    </Suspense>
+                  </div>
+                </section>
+              ) : null}
               <section className="pr-card">
                 <h3 className="pr-card-title">
                   <span className="pr-info-icon"><Info size={16} aria-hidden /></span>
