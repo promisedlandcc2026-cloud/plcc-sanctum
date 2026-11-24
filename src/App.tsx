@@ -28,6 +28,7 @@ import { LeadersPage } from './pages/cms/LeadersPage';
 import { GalleryPage } from './pages/cms/GalleryPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
+import { OverflowJoinView } from './components/public/OverflowJoinView';
 import { PublicJoinView } from './components/public/PublicJoinView';
 import { JoinFinderPage } from './pages/JoinFinderPage';
 import { ListenerRoomView } from './components/public/ListenerRoomView';
@@ -150,6 +151,9 @@ const RouterContent: React.FC = () => {
   if (currentPath.startsWith('/join/')) {
     const parts = currentPath.split('/');
     const slug = parts[2];
+    const query = new URLSearchParams(window.location.search);
+    const fromKaLink = query.get('from') === 'jordan';
+    const sourceChannel = query.get('channel') || '';
     if (!slug) {
       return <JoinFinderPage onNavigate={navigate} />;
     }
@@ -163,22 +167,19 @@ const RouterContent: React.FC = () => {
             void leavePrayerRoom();
             localStorage.removeItem('sanctum_active_attendee_session');
             setJoinedAttendeeName(null);
-            navigate(isAuthenticated ? '/dashboard' : `/join/${slug}`);
+            if (!fromKaLink) navigate(isAuthenticated ? '/dashboard' : `/join/${slug}`);
           }}
         />
       );
     }
 
-    return (
-      <PublicJoinView
-        slug={slug}
-        onJoinSuccess={(name) => {
-          localStorage.setItem('sanctum_active_attendee_session', name);
-          setJoinedAttendeeName(name);
-        }}
-        onNavigate={navigate}
-      />
-    );
+    const onJoinSuccess = (name: string) => {
+      localStorage.setItem('sanctum_active_attendee_session', name);
+      setJoinedAttendeeName(name);
+    };
+    return fromKaLink
+      ? <OverflowJoinView key={`${slug}:${sourceChannel}`} slug={slug} sourceChannel={sourceChannel} onJoinSuccess={onJoinSuccess} />
+      : <PublicJoinView slug={slug} onJoinSuccess={onJoinSuccess} onNavigate={navigate} />;
   }
 
   // Standalone Public Pages
