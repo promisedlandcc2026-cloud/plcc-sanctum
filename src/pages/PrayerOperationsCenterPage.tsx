@@ -11,11 +11,9 @@ import {
   Eye,
   FileText,
   Hand,
-  Headphones,
   Lock,
   Megaphone,
   MoreVertical,
-  PlusCircle,
   Radio,
   RefreshCw,
   ScrollText,
@@ -33,7 +31,7 @@ import { useApp } from '../context/AppContext';
 import { ROLE_CAPABILITIES } from '../lib/permissions';
 import { fetchHealth, sanctumApi, type ApiHealth, type JordanBridgeInfo } from '../services/api/sanctumApi';
 import { BROADCAST_MAX } from '../../shared/broadcast.ts';
-import { fetchJordanRooms, JORDAN_ORIGIN, jordanRoomUrl, PLCC_ONE_URL, type JordanRoom } from '../lib/plccLinks';
+import { fetchJordanRooms, jordanRoomUrl, PLCC_ONE_URL, type JordanRoom } from '../lib/plccLinks';
 import { cn } from '../lib/utils';
 import { useOpsSearch } from '../context/OpsSearchContext';
 import type { PrayerRoom } from '../types';
@@ -70,13 +68,6 @@ const KIND_LABEL: Record<Row['kind'], string> = {
 };
 
 const LIVE_STATES = new Set(['LIVE', 'STARTING', 'ENDING']);
-
-function greeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
 
 function timeAgo(iso?: string) {
   if (!iso) return '';
@@ -157,7 +148,6 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
 
   const role = user?.role || 'LISTENER';
   const caps = ROLE_CAPABILITIES[role];
-  const firstName = user?.name?.split(' ')[0] || 'Pastor';
 
   const activeRooms = prayerRooms.filter((room) => !room.isArchived);
   const sessionLive = Boolean(liveSession && LIVE_STATES.has(String(liveSession.status)));
@@ -165,10 +155,10 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
   const listeners = participants.filter((p) => !p.leftAt);
   const listenerCount = sessionLive || sessionWaiting ? Math.max(connectedNow || 0, listeners.length) : 0;
   const waitingHands = raisedHands.filter((h) => h.status === 'WAITING');
-  const pendingRequests = prayerRequests.filter((r) => r.status === 'PENDING');
   const liveRoomId = sessionLive || sessionWaiting ? liveSession?.prayerRoomId : undefined;
   const liveRoom = activeRooms.find((room) => room.id === liveRoomId);
-  const overflowRoom = activeRooms.find((room) => !room.isTestRoom && roomKind(room) === 'overflow') || activeRooms[0];
+  const overflowRoom = activeRooms.find((room) => roomKind(room) === 'overflow')
+    || activeRooms.find((room) => !room.isTestRoom);
 
   const rows: Row[] = useMemo(() => {
     const jordanRows: Row[] = jordan.map((room) => ({
@@ -211,7 +201,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
   }, [jordan, activeRooms, liveRoomId, sessionLive, sessionWaiting, listenerCount, waitingHands.length, onNavigate]);
 
   const liveCount = rows.filter((r) => r.live).length;
-  const jordanPeople = jordanCounts ? jordan.reduce((sum, r) => sum + (r.count || 0), 0) : 0;
+  const mainRoom = jordan.find((room) => room.id === (bridge?.active ? bridge.jordanChannelId : bridgeChoice));
   const sanctumSessionId = sessionLive || sessionWaiting ? liveSession?.id : undefined;
 
   useEffect(() => {
@@ -234,7 +224,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
   }, [sanctumSessionId]);
 
   useEffect(() => {
-    if (bridgeChoice || !jordan.length) return;
+    if (!jordan.length || jordan.some((room) => room.id === bridgeChoice)) return;
     setBridgeChoice((jordan.find((r) => r.live) || jordan[0]).id);
   }, [jordan, bridgeChoice]);
 
@@ -287,9 +277,6 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
       filter === 'live' ? r.live || r.waiting : filter === 'full' ? isFull(r) : filter === 'scheduled' ? !r.live && !r.waiting : true
     )
     .filter((r) => !search || `${r.name} ${r.where} ${KIND_LABEL[r.kind]}`.toLowerCase().includes(search));
-  const roleShort =
-    role === 'OWNER' ? 'Senior Pastor' : role === 'ADMIN' ? 'Administrator' : role === 'TECHNICAL_ADMIN' ? 'Technical Admin' : 'Moderator';
-
   const activity = useMemo(() => {
     const items: { id: string; icon: React.ElementType; text: string; at: string }[] = [];
     for (const h of raisedHands.slice(-6)) {
@@ -325,9 +312,9 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
       ]
     : [];
 
+  const focusedRoom = liveRoom || overflowRoom;
   const openControl = () => {
-    const target = liveRoom || overflowRoom;
-    if (target) onNavigate(`/dashboard/prayer-rooms/${target.id}/control`);
+    if (focusedRoom) onNavigate(`/dashboard/prayer-rooms/${focusedRoom.id}/control`);
     else onNavigate('/dashboard/prayer-rooms/new');
   };
 
@@ -339,132 +326,114 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
         <div className="ops-hero-inner">
           <div className="min-w-0">
             <p className="ops-hero-eyebrow">PLCC Sanctum</p>
-            <h1 className="ops-hero-title">Prayer Operations Center</h1>
-            <p className="ops-hero-sub">Monitor • Support • Manage • Overflow Prayer Rooms</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button type="button" onClick={openControl} className="ops-hero-btn">
-              <Headphones className="h-5 w-5" aria-hidden />
-              {liveRoom ? 'Moderator Control Room' : 'Moderator Control Room'}
-              <Lock className="h-4 w-4" aria-hidden />
-            </button>
+            <h1 className="ops-hero-title">Prayer Overflow</h1>
+            <p className="ops-hero-sub">Relay live prayer from Ka Link to Sanctum.</p>
           </div>
         </div>
       </section>
 
-      {/* Summary cards */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        <Stat
-          tone="green"
-          icon={Radio}
-          label="Active Rooms"
-          value={liveCount}
-          note={`${liveCount} Live${fullCount ? ` • ${fullCount} Full` : ''} • ${rows.length} total`}
-        />
-        <Stat
-          tone="gold"
-          icon={Headphones}
-          label="Listeners"
-          value={listenerCount + jordanPeople}
-          note={
-            jordanCounts
-              ? `${jordanPeople} in Ka Link · ${listenerCount} in Sanctum`
-              : sessionLive || sessionWaiting
-                ? `in ${liveRoom?.name || 'the Sanctum room'}`
-                : 'No one in Sanctum right now'
-          }
-        />
-        <Stat
-          tone="plain"
-          icon={Hand}
-          label="Raised Hands"
-          value={waitingHands.length}
-          note={waitingHands.length ? 'Awaiting approval' : 'None waiting'}
-          onClick={liveRoom ? openControl : undefined}
-        />
-        <section className="ops-profile">
-          <span className="ops-profile-avatar">{(user?.name || 'M').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()}</span>
-          <div className="min-w-0">
-            <p className="truncate text-base font-extrabold text-ink lg:text-lg">{user?.name || 'Moderator'}</p>
-            <span className="ops-role-pill">
-              <ShieldAlert className="h-3.5 w-3.5" aria-hidden />
-              {roleShort}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section aria-labelledby="overflow-status" className="rounded-3xl border border-line bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="overflow-status" className="text-lg font-bold text-ink">Overflow room</h2>
+              <p className="mt-1 text-sm text-muted">{focusedRoom?.name || 'No overflow room configured'}</p>
+            </div>
+            <span className="rounded-full border border-line px-3 py-1 text-sm font-semibold text-ink">
+              {sessionWaiting ? 'Waiting to go live' : liveSession?.status === 'STARTING' ? 'Opening' : liveSession?.status === 'ENDING' ? 'Closing' : sessionLive ? 'Open' : 'Closed'}
             </span>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#2f9d5c]" aria-hidden /> Online
-            </p>
+          </div>
+          <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-muted">Overflow listeners</dt>
+              <dd className="font-semibold text-ink">{listenerCount}</dd>
+            </div>
+            {mainRoom ? (
+              <div>
+                <dt className="text-muted">{mainRoom.name} · Ka Link</dt>
+                <dd className="font-semibold text-ink">
+                  {typeof mainRoom.count === 'number' ? `${mainRoom.count} / ${mainRoom.capacity || 50} in room` : 'Headcount unavailable'}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {focusedRoom || caps?.canManageRooms ? (
+              <button type="button" onClick={openControl} className="ops-btn is-green">
+                {liveRoom ? 'Manage overflow' : overflowRoom ? 'Open overflow controls' : 'Create overflow room'}
+              </button>
+            ) : null}
+            {focusedRoom ? (
+              <a href={`/join/${focusedRoom.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-ink underline">
+                {sessionLive ? 'Open listener view' : 'Preview member entry'}
+              </a>
+            ) : null}
           </div>
         </section>
-      </section>
+        <section id="ops-bridge" className="scroll-mt-4 rounded-3xl border border-line bg-card p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
+            <Radio className="h-5 w-5" aria-hidden />
+            Audio bridge
+          </h2>
+          {!sanctumSessionId ? (
+            <p className="mt-2 text-sm text-muted">
+              Open overflow to connect the live prayer audio from Ka Link.
+            </p>
+          ) : bridge?.active ? (
+            <div className="mt-3 space-y-2">
+              <p className="flex items-center gap-2 text-sm font-bold text-[#1f6e3f] dark:text-[#9fd8b5]">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#2f9d5c]" aria-hidden />
+                {bridge.state === 'live' ? 'Relaying live' : 'Connected — waiting for someone to pray'}
+              </p>
+              <p className="text-sm text-ink">
+                <strong>{bridge.jordanRoomTitle}</strong> → {liveRoom?.name || 'overflow room'}
+              </p>
+              <p className="text-xs text-muted">Uses one of the Ka Link room's 50 seats.</p>
+            </div>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {jordan.length ? (
+                <select
+                  value={bridgeChoice}
+                  onChange={(e) => setBridgeChoice(e.target.value)}
+                  aria-label="Ka Link prayer room to relay"
+                  className="min-h-[44px] w-full rounded-xl border border-line bg-paper px-3 text-sm font-semibold text-ink"
+                >
+                  {jordan.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                      {r.live ? ' (live)' : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-sm text-muted">No Ka Link rooms found.</p>
+              )}
+              {bridge?.state === 'error' && bridge.error ? <p className="text-xs text-danger">{bridge.error}</p> : null}
+            </div>
+          )}
+          {bridgeError ? <p className="mt-2 text-xs text-danger">{bridgeError}</p> : null}
+          {sanctumSessionId && caps?.canMuteSpeakers ? (
+            <button
+              type="button"
+              onClick={() => void toggleBridge()}
+              disabled={bridgeBusy || (!bridge?.active && !jordan.some((room) => room.id === bridgeChoice))}
+              className={cn('mt-3', bridge?.active ? 'ops-btn is-ghost !cursor-pointer !border-solid' : 'ops-btn is-green')}
+            >
+              {bridgeBusy ? 'Working…' : bridge?.active ? 'Stop relaying' : 'Connect audio bridge'}
+            </button>
+          ) : null}
+        </section>
+      </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_17.5rem]">
         <div className="min-w-0 space-y-5">
-          {/* Busy-gathering checklist (always visible to moderators, pastors and admins) */}
-          <section className="ops-checklist" aria-labelledby="ops-checklist-title">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="ops-checklist-title" className="flex items-center gap-2 text-lg font-extrabold">
-                <Users className="h-5 w-5" aria-hidden />
-                For a busy gathering, moderators should:
-              </h2>
-              {sanctumSessionId && bridge?.active ? (
-                <span className="ops-checklist-ready">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden /> Ready — overflow is open and hearing Ka Link
-                </span>
-              ) : null}
-            </div>
-            <ol className="mt-3 grid gap-3 md:grid-cols-2">
-              <li className={cn('ops-step', sanctumSessionId && 'is-done')}>
-                <span className="ops-step-num">{sanctumSessionId ? <Check className="h-4 w-4" aria-hidden /> : 1}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="ops-step-title">Open the overflow room before Ka Link fills up.</p>
-                  <p className="ops-step-note">
-                    {sanctumSessionId
-                      ? `Open: ${liveRoom?.name || liveSession?.roomName || 'overflow room'}.`
-                      : 'Ka Link rooms hold 50 people. Members who can’t get in are offered this room.'}
-                  </p>
-                </div>
-                {!sanctumSessionId ? (
-                  <button
-                    type="button"
-                    onClick={() => (overflowRoom ? onNavigate(`/dashboard/prayer-rooms/${overflowRoom.id}/control`) : onNavigate('/dashboard/prayer-rooms/new'))}
-                    className="ops-btn is-green shrink-0"
-                  >
-                    {overflowRoom ? 'Open overflow' : 'Create overflow'}
-                  </button>
-                ) : null}
-              </li>
-              <li className={cn('ops-step', bridge?.active && 'is-done')}>
-                <span className="ops-step-num">{bridge?.active ? <Check className="h-4 w-4" aria-hidden /> : 2}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="ops-step-title">Turn on the Ka Link Audio Bridge in the Operations Center.</p>
-                  <p className="ops-step-note">
-                    {bridge?.active
-                      ? `On: overflow hears ${bridge.jordanRoomTitle || 'Ka Link'}.`
-                      : sanctumSessionId
-                        ? 'So the overflow hears the same live prayer. Uses one of Ka Link’s 50 seats.'
-                        : 'Do step 1 first.'}
-                  </p>
-                </div>
-                {!bridge?.active ? (
-                  <button
-                    type="button"
-                    disabled={!sanctumSessionId}
-                    onClick={() => document.getElementById('ops-bridge')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="ops-btn is-gold shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Turn on bridge
-                  </button>
-                ) : null}
-              </li>
-            </ol>
-          </section>
-
-          {/* Live Prayer Rooms */}
-          <section id="ops-rooms" className="scroll-mt-4 overflow-hidden rounded-3xl border border-line bg-card shadow-sm">
+          <details id="ops-rooms" open={Boolean(search)} className="scroll-mt-4 overflow-hidden rounded-3xl border border-line bg-card shadow-sm">
+            <summary className="cursor-pointer px-5 py-3.5 text-base font-bold text-ink">All Rooms ({rows.length})</summary>
             <header className="flex flex-col gap-3 bg-[#0f3d2c] px-5 py-3.5 text-[#f6f1e6] sm:flex-row sm:items-center sm:justify-between">
               <h2 className="flex items-center gap-2.5 text-lg font-bold lg:text-xl">
                 <Radio className="h-6 w-6 text-[#f1d58a]" aria-hidden />
-                Live Prayer Rooms
+                Room directory
               </h2>
               <div className="flex items-center gap-1.5 overflow-x-auto">
                 {(
@@ -566,7 +535,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
               Ka Link rooms hold up to 50 people. When one fills, open the Sanctum overflow room.
               {jordan.length && !jordanCounts ? ' Headcounts for Ka Link rooms need SANCTUM_SERVICE_KEY on both servers.' : ''}
             </p>
-          </section>
+          </details>
 
           {/* Quick actions */}
           <section className="rounded-3xl border border-line bg-card p-5 shadow-sm">
@@ -574,13 +543,7 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
               <Zap className="h-5 w-5" aria-hidden />
               Quick Actions <span className="text-sm font-semibold text-muted">(Moderator)</span>
             </h2>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5">
-              <Action icon={PlusCircle} label="Create Prayer Room" onClick={() => onNavigate('/dashboard/prayer-rooms/new')} />
-              <Action
-                icon={Radio}
-                label="Open Overflow Room"
-                onClick={() => (overflowRoom ? onNavigate(`/dashboard/prayer-rooms/${overflowRoom.id}/control`) : onNavigate('/dashboard/prayer-rooms/new'))}
-              />
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               <Action icon={Megaphone} label="Broadcast Message" onClick={() => setBroadcastOpen(true)} />
               <Action icon={ShieldAlert} label="View Reports" onClick={() => window.open(PLCC_ONE_URL, '_blank', 'noopener,noreferrer')} />
               <Action icon={ScrollText} label="Audit Log" onClick={() => onNavigate('/dashboard/audit')} />
@@ -639,61 +602,6 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
 
         {/* Right rail */}
         <aside className="grid gap-5 md:grid-cols-2 xl:flex xl:flex-col">
-          <section id="ops-bridge" className="scroll-mt-4 rounded-3xl border border-line bg-card p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
-              <Radio className="h-5 w-5" aria-hidden />
-              Ka Link Audio Bridge
-            </h2>
-            {!sanctumSessionId ? (
-              <p className="mt-2 text-sm text-muted">
-                Start the overflow room, then relay a Ka Link prayer room into it so overflow listeners hear the same prayer.
-              </p>
-            ) : bridge?.active ? (
-              <div className="mt-3 space-y-2">
-                <p className="flex items-center gap-2 text-sm font-bold text-[#1f6e3f] dark:text-[#9fd8b5]">
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#2f9d5c]" aria-hidden />
-                  {bridge.state === 'live' ? 'Relaying live' : 'Connected — waiting for someone to pray'}
-                </p>
-                <p className="text-sm text-ink">
-                  <strong>{bridge.jordanRoomTitle}</strong> → {liveRoom?.name || 'overflow room'}
-                </p>
-                <p className="text-xs text-muted">Uses one of the Ka Link room's 50 seats.</p>
-              </div>
-            ) : (
-              <div className="mt-3 space-y-2">
-                {jordan.length ? (
-                  <select
-                    value={bridgeChoice}
-                    onChange={(e) => setBridgeChoice(e.target.value)}
-                    aria-label="Ka Link prayer room to relay"
-                    className="min-h-[44px] w-full rounded-xl border border-line bg-paper px-3 text-sm font-semibold text-ink"
-                  >
-                    {jordan.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                        {r.live ? ' (live)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="text-sm text-muted">No Ka Link rooms found.</p>
-                )}
-                {bridge?.state === 'error' && bridge.error ? <p className="text-xs text-danger">{bridge.error}</p> : null}
-              </div>
-            )}
-            {bridgeError ? <p className="mt-2 text-xs text-danger">{bridgeError}</p> : null}
-            {sanctumSessionId && caps?.canMuteSpeakers ? (
-              <button
-                type="button"
-                onClick={() => void toggleBridge()}
-                disabled={bridgeBusy || (!bridge?.active && !jordan.length)}
-                className={cn('mt-3 w-full', bridge?.active ? 'ops-btn is-ghost !cursor-pointer !border-solid' : 'ops-btn is-green')}
-              >
-                {bridgeBusy ? 'Working…' : bridge?.active ? 'Stop relaying' : 'Relay into overflow room'}
-              </button>
-            ) : null}
-          </section>
-
           <section className="rounded-3xl border border-line bg-card p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
               <ShieldCheck className="h-5 w-5" aria-hidden />
@@ -811,39 +719,6 @@ export const PrayerOperationsCenterPage: React.FC<Props> = ({ onNavigate }) => {
     </div>
   );
 };
-
-function Stat({
-  tone,
-  icon: Icon,
-  label,
-  value,
-  note,
-  onClick,
-}: {
-  tone: 'green' | 'gold' | 'plain';
-  icon: React.ElementType;
-  label: string;
-  value: number;
-  note: string;
-  onClick?: () => void;
-}) {
-  const Tag = onClick ? 'button' : 'div';
-  return (
-    <Tag
-      type={onClick ? 'button' : undefined}
-      onClick={onClick}
-      className={cn('ops-stat', `is-${tone}`, onClick && 'is-clickable')}
-    >
-      <Icon className="ops-stat-icon" aria-hidden />
-      <span className="min-w-0">
-        <span className="block text-sm font-bold lg:text-lg">{label}</span>
-        <span className="block text-3xl font-extrabold leading-tight tabular-nums lg:text-[2.6rem]">{value}</span>
-        <span className="block truncate text-xs lg:text-sm">{note}</span>
-      </span>
-      <Users className="ops-stat-ghost" aria-hidden />
-    </Tag>
-  );
-}
 
 function KindPill({ kind }: { kind: Row['kind'] }) {
   return (

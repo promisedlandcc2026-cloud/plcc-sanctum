@@ -24,7 +24,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   const { isDarkMode, toggleDarkMode } = useApp();
 
   const navItems = [
-    { label: 'Control Room', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Prayer Overflow', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Participants', path: '/dashboard/participants', icon: Users },
     { label: 'Prayer Requests', path: '/dashboard/prayer-requests', icon: FileText },
     { label: 'Room Schedule', path: '/dashboard/prayer-rooms', icon: Radio },
