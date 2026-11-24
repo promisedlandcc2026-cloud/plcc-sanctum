@@ -96,7 +96,7 @@ export interface AppContextType {
   assignRole: (participantId: string, newRole: Role, adminId?: string) => Promise<void>;
 
   // Public / Attendee actions
-  joinPrayerRoom: (roomSlug: string, name: string, options?: { passcode?: string }) => Promise<{ participantId: string; role: Role }>;
+  joinPrayerRoom: (roomSlug: string, name: string, options?: { passcode?: string; expectedSessionId?: string }) => Promise<{ participantId: string; role: Role }>;
   raiseHandAttendee: (participantId: string, name: string) => Promise<boolean>;
   lowerHandAttendee: (participantId: string) => Promise<void>;
   sendReactionAttendee: (emoji: 'AMEN' | 'PRAISE_GOD') => void;
@@ -1265,7 +1265,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Public attendee join
-  const joinPrayerRoom = async (roomSlug: string, name: string, options?: { passcode?: string }) => {
+  const joinPrayerRoom = async (roomSlug: string, name: string, options?: { passcode?: string; expectedSessionId?: string }) => {
     setPrayerComplete(false);
 
     let altar;
@@ -1279,7 +1279,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast('This prayer gathering is not open to join yet, or has already ended.', 'warning');
       throw error;
     }
-    if (!altar.session?.id) {
+    if (!altar.session?.id || (options?.expectedSessionId && altar.session.id !== options.expectedSessionId)) {
       addToast('This prayer gathering is not open to join yet, or has already ended.', 'warning');
       throw new Error('SESSION_NOT_JOINABLE');
     }

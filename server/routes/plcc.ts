@@ -253,8 +253,7 @@ export async function bridgeStopHandler(req: Request, res: Response): Promise<vo
 
 /**
  * GET /api/overflow?jordanChannelId=… — public, read by PLCC Ka Link when a prayer room is
- * full. Answers with the Sanctum overflow room to send members to: first a room that is
- * relaying that Ka Link room's audio, otherwise any live overflow room. No people or counts.
+ * full. Channel-specific requests only return a room relaying that channel. No people or counts.
  */
 export async function overflowForJordanHandler(req: Request, res: Response): Promise<void> {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -291,11 +290,9 @@ export async function overflowForJordanHandler(req: Request, res: Response): Pro
         !s.prayerRoom.passcodeHash &&
         s.prayerRoom.allowGuests
     );
-    const pick =
-      usable.find((s) => channelId && bridged.get(s.id)?.jordanChannelId === channelId) ||
-      usable.find((s) => s.status === 'LIVE' && bridged.has(s.id)) ||
-      usable.find((s) => s.status === 'LIVE') ||
-      usable[0];
+    const pick = channelId
+      ? usable.find((session) => bridged.get(session.id)?.jordanChannelId === channelId)
+      : usable.find((session) => session.status === 'LIVE' && bridged.has(session.id)) || usable.find((session) => bridged.has(session.id));
     if (!pick) {
       res.json({ available: false });
       return;
@@ -305,8 +302,8 @@ export async function overflowForJordanHandler(req: Request, res: Response): Pro
     const bridge = bridged.get(pick.id);
     res.json({
       available: true,
-      roomName: pick.prayerRoom.name,
-      joinUrl: `${origin}/join/${encodeURIComponent(pick.prayerRoom.slug)}?from=jordan`,
+      roomName: bridge?.jordanRoomTitle || pick.prayerRoom.name,
+      joinUrl: `${origin}/join/${encodeURIComponent(pick.prayerRoom.slug)}?${new URLSearchParams({ from: 'jordan', ...(channelId ? { channel: channelId } : {}) })}`,
       status: pick.status,
       hearsJordan: Boolean(bridge && (!channelId || bridge.jordanChannelId === channelId)),
     });
