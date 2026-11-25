@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { publicSiteUrl, sanctumMode } from '../shared/sanctumMode.ts';
+import { sanctumMode } from '../shared/sanctumMode.ts';
 import { databaseHealthHandler, healthHandler } from './routes/health.ts';
 import { createPrayerRoomHandler, deletePrayerRoomHandler, listHostCandidatesHandler, listPrayerRoomsHandler, updatePrayerRoomHandler } from './routes/prayerRooms.ts';
 import {
@@ -155,8 +155,10 @@ export function createApp() {
   registerCmsPublicRoutes(app);
 
   if (sanctumMode(process.env.SANCTUM_MODE) === 'church') {
+    // PLCC (Nov 25 2026): the bare Sanctum address is for moderators. Open the Moderator
+    // Control Room (sign-in first if needed). Members arrive on /join/... from Ka Link.
     app.get('/', (_req, res) => {
-      res.redirect(302, publicSiteUrl(process.env.PUBLIC_SITE_URL));
+      res.redirect(302, '/dashboard/prayer-rooms');
     });
   }
 
