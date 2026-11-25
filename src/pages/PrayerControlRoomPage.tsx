@@ -190,8 +190,8 @@ export const PrayerControlRoomPage: React.FC<PrayerControlRoomPageProps> = ({
         if (liveSession) {
           await endLiveSession(liveSession.id);
         }
-        addToast('Prayer session concluded successfully. God bless your ministry!', 'success');
-        onNavigate('/dashboard');
+        addToast('Overflow room closed. God bless you!', 'success');
+        onNavigate('/dashboard/prayer-rooms');
       },
     });
   };
@@ -339,9 +339,9 @@ export const PrayerControlRoomPage: React.FC<PrayerControlRoomPageProps> = ({
           <span>End Prayer</span>
         </button>
       ) : (
-        <button type="button" onClick={() => onNavigate('/dashboard')} className="pr-ctl">
+        <button type="button" onClick={() => onNavigate('/dashboard/prayer-rooms')} className="pr-ctl">
           <LayoutDashboard aria-hidden />
-          <span>Dashboard</span>
+          <span>All rooms</span>
         </button>
       )}
     </div>
@@ -351,11 +351,11 @@ export const PrayerControlRoomPage: React.FC<PrayerControlRoomPageProps> = ({
     <div className="pr-shell min-h-screen select-none" style={{ height: 'auto', minHeight: '100vh' }}>
       <header className="pr-header">
         <div className="pr-header-inner">
-          <button type="button" onClick={() => onNavigate('/dashboard')} className="pr-brand cursor-pointer" aria-label="Back to the dashboard">
+          <button type="button" onClick={() => onNavigate('/dashboard/prayer-rooms')} className="pr-brand cursor-pointer" aria-label="Back to the Moderator Control Room">
             <img src="/prayer-room/prayer-emblem.png" alt="" aria-hidden className="pr-emblem" />
             <div className="min-w-0 text-left">
-              <p className="pr-brand-name">PLCC SANCTUM</p>
-              <p className="pr-brand-sub">Moderator Room</p>
+              <p className="pr-brand-name">PLCC Ka Link</p>
+              <p className="pr-brand-sub">Overflow · Moderator Room</p>
             </div>
           </button>
           <div className="pr-church">
@@ -366,7 +366,7 @@ export const PrayerControlRoomPage: React.FC<PrayerControlRoomPageProps> = ({
             <button type="button" onClick={() => startTour()} className="pr-icon-btn cursor-pointer" aria-label="Show the Moderator Room guide">
               <CircleHelp size={22} aria-hidden />
             </button>
-            <button type="button" onClick={() => onNavigate(`/dashboard/prayer-rooms/${room?.id || roomId}`)} className="pr-icon-btn is-solid cursor-pointer" aria-label="Back to the prayer room settings">
+            <button type="button" onClick={() => onNavigate('/dashboard/prayer-rooms')} className="pr-icon-btn is-solid cursor-pointer" aria-label="Back to the Moderator Control Room">
               <X size={20} aria-hidden />
             </button>
           </div>
@@ -479,11 +479,11 @@ export const PrayerControlRoomPage: React.FC<PrayerControlRoomPageProps> = ({
               <div className="pr-stage" data-tour="control-start">
                 <span className="pr-orb" aria-hidden><Radio /></span>
                 <p className="pr-status">The room is not open yet</p>
-                <p className="pr-hint">Open the sanctuary so members can join, then start prayer when you are ready.</p>
+                <p className="pr-hint">Open the overflow room when Ka Link is nearly full. Members are moved in automatically.</p>
                 <div className="mod-start">
                   {resolution.status === 'SCHEDULED' || resolution.status === 'ENDED' ? (
                     <button type="button" onClick={() => setShowOpenSanctuaryModal(true)} data-tour="control-open-sanctuary" className="mod-btn is-primary cursor-pointer">
-                      <Mic size={18} aria-hidden /> Open sanctuary
+                      <Mic size={18} aria-hidden /> Open overflow room
                     </button>
                   ) : null}
                   <button type="button" onClick={() => setShowPrePrayerModal(true)} data-tour="control-pre-prayer" className="mod-btn cursor-pointer">
@@ -731,8 +731,8 @@ export const PrayerControlRoomPage: React.FC<PrayerControlRoomPageProps> = ({
               <button type="button" className="pr-more-item" onClick={() => { setMoreOpen(false); startTour(); }}>
                 <CircleHelp size={20} aria-hidden /> <span>Guide</span>
               </button>
-              <button type="button" className="pr-more-item" onClick={() => { setMoreOpen(false); onNavigate('/dashboard'); }}>
-                <LayoutDashboard size={20} aria-hidden /> <span>Dashboard</span>
+              <button type="button" className="pr-more-item" onClick={() => { setMoreOpen(false); onNavigate('/dashboard/prayer-rooms'); }}>
+                <LayoutDashboard size={20} aria-hidden /> <span>All rooms</span>
               </button>
             </div>
             <p className="pr-more-label">Connection</p>

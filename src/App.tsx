@@ -30,6 +30,7 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { OverflowJoinView } from './components/public/OverflowJoinView';
 import { JORDAN_ORIGIN } from './lib/plccLinks';
+import { ModeratorHomePage } from './pages/ModeratorHomePage';
 import { PublicJoinView } from './components/public/PublicJoinView';
 import { JoinFinderPage } from './pages/JoinFinderPage';
 import { ListenerRoomView } from './components/public/ListenerRoomView';
@@ -264,7 +265,7 @@ const RouterContent: React.FC = () => {
 
   const pathOnly = currentPath.split('?')[0];
   const showSharePanel = new URLSearchParams(currentPath.split('?')[1] || '').get('share') === '1';
-  const roomDetailMatch = pathOnly.match(/^\/dashboard\/prayer-rooms\/([^/]+)$/);
+  const roomDetailMatch = pathOnly === '/dashboard/prayer-rooms/manage' ? null : pathOnly.match(/^\/dashboard\/prayer-rooms\/([^/]+)$/);
   if (roomDetailMatch) {
     return (
       <DashboardLayout currentPath={pathOnly} onNavigate={navigate}>
@@ -274,9 +275,15 @@ const RouterContent: React.FC = () => {
   }
 
   // Dashboard sub-routes
+  // Moderators land here: the Moderator Control Room, full screen in the Ka Link look.
   if (currentPath === '/dashboard/prayer-rooms') {
+    return <ModeratorHomePage onNavigate={navigate} />;
+  }
+
+  // The full room list with create/edit, for admins.
+  if (currentPath === '/dashboard/prayer-rooms/manage') {
     return (
-      <DashboardLayout currentPath={currentPath} onNavigate={navigate}>
+      <DashboardLayout currentPath="/dashboard/prayer-rooms" onNavigate={navigate}>
         <PrayerRoomsListPage onNavigate={navigate} />
       </DashboardLayout>
     );

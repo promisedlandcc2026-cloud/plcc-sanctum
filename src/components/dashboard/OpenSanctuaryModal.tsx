@@ -42,7 +42,7 @@ export const OpenSanctuaryModal: React.FC<OpenSanctuaryModalProps> = ({
           <div>
             <div className="flex items-center gap-2 text-[#C9A35A]">
               <Mic className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-wider">Open Sanctuary</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Open overflow room</span>
             </div>
             <h2 id="open-sanctuary-title" className="mt-2 text-xl font-extrabold text-[#16251F] dark:text-[#F8F7F3]">
               Name today&apos;s sermon leader
@@ -51,7 +51,7 @@ export const OpenSanctuaryModal: React.FC<OpenSanctuaryModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close Open Sanctuary"
+            aria-label="Close"
             className="p-2 rounded-xl text-[#68736D] dark:text-[#96A39D] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -90,7 +90,7 @@ export const OpenSanctuaryModal: React.FC<OpenSanctuaryModalProps> = ({
             disabled={!trimmedName}
             className="px-5 py-2.5 rounded-xl bg-[#203C32] hover:bg-[#16251F] disabled:opacity-50 text-white dark:bg-[#C9A35A] dark:text-[#101814] text-xs font-bold cursor-pointer disabled:cursor-not-allowed"
           >
-            Open Sanctuary
+            Open overflow room
           </button>
         </div>
       </form>
