@@ -503,24 +503,102 @@
 .mod-hold { display: flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; min-height: 60px; border-radius: 1rem; border: 2px dashed #c9a35a; background: #fbf5e6; color: #5c4415; font-weight: 800; touch-action: none; user-select: none; -webkit-user-select: none; }
 .mod-hold.is-on { border-style: solid; background: linear-gradient(180deg, #f1d58f, #d9b45e); color: #1d2414; }
 
-/* Moderator Control Room landing (Nov 25 2026): Ka Link look, phone first. */
-.mod-home-body { width: 100%; max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem calc(2rem + env(safe-area-inset-bottom)); }
-.mod-home-title { font-family: 'Playfair Display', 'Fraunces', Georgia, serif; font-size: 1.6rem; font-weight: 700; color: #fff8e6; }
-.mod-home-steps { margin-top: 1rem; display: grid; gap: 0.5rem; padding: 0.9rem; border-radius: 1.25rem; background: var(--pr-soft); border: 1px solid var(--pr-line); list-style: none; }
-.mod-home-steps li { display: flex; gap: 0.65rem; align-items: flex-start; font-size: 0.92rem; line-height: 1.35; color: var(--pr-text); }
-.mod-home-steps span { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: var(--pr-gold); color: #1d2414; font-size: 0.78rem; font-weight: 900; }
-.mod-home-label { margin-top: 1.5rem; margin-bottom: 0.6rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--pr-gold-light); }
-.mod-home-list { display: grid; gap: 0.6rem; list-style: none; }
-.mod-home-room { width: 100%; min-height: 72px; display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 0.9rem; border-radius: 1.25rem; background: rgba(0,0,0,.22); border: 1px solid var(--pr-line); color: var(--pr-text); text-align: left; }
-.mod-home-room:active { background: rgba(0,0,0,.35); }
-.mod-home-room-icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 9999px; background: linear-gradient(180deg, var(--pr-gold-light), var(--pr-gold)); color: #1d2414; }
-.mod-home-room-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-.mod-home-room-name { font-size: 1.02rem; font-weight: 800; color: #fff8e6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mod-home-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 800; }
-.mod-home-chip.is-live { background: var(--pr-ok); color: #fff; }
-.mod-home-chip.is-live i { width: 7px; height: 7px; border-radius: 9999px; background: #fff; }
-.mod-home-chip.is-wait { background: rgba(217,180,94,.2); color: var(--pr-gold-light); }
-.mod-home-chip.is-off { background: rgba(255,255,255,.08); color: var(--pr-muted); }
-.mod-home-go { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.1rem; font-size: 0.88rem; font-weight: 800; color: var(--pr-gold-light); }
-.mod-home-empty { padding: 1rem; border-radius: 1rem; background: var(--pr-soft); color: var(--pr-muted); font-size: 0.92rem; }
-.mod-home-admin { margin-top: 1.75rem; display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0 0.9rem; border-radius: 9999px; border: 1px solid var(--pr-line); color: var(--pr-muted); font-size: 0.85rem; font-weight: 700; }
+/* Moderator Control Room (Nov 25 2026): Ka Link look, phone first, then two columns on desktop. */
+.mcr { --mcr-surface: rgba(255,255,255,.045); --mcr-surface-2: rgba(255,255,255,.07); --mcr-border: rgba(217,180,94,.22); --mcr-border-soft: rgba(255,255,255,.08); }
+.mcr-back { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 40px; padding: 0 0.85rem; border-radius: 9999px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.18); color: #fff8e6; font-size: 0.85rem; font-weight: 700; backdrop-filter: blur(6px); }
+.mcr-back:active { background: rgba(0,0,0,.5); }
+.mcr-wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 1.25rem 1rem calc(2.5rem + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) { .mcr-wrap { padding: 2rem 1.5rem 3rem; } }
+
+.mcr-eyebrow { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--pr-gold-light); }
+.mcr-title { margin-top: 0.35rem; font-family: 'Playfair Display', 'Fraunces', Georgia, serif; font-weight: 700; font-size: 1.7rem; line-height: 1.1; color: #fff8e6; }
+@media (min-width: 768px) { .mcr-title { font-size: 2.25rem; } }
+.mcr-lead { margin-top: 0.4rem; font-size: 0.95rem; line-height: 1.45; color: var(--pr-muted); }
+
+.mcr-stats { margin-top: 1.25rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+@media (min-width: 768px) { .mcr-stats { margin-top: 1.75rem; gap: 1rem; } }
+.mcr-stat { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.8rem; border-radius: 1rem; background: var(--mcr-surface); border: 1px solid var(--mcr-border-soft); min-width: 0; }
+@media (min-width: 768px) { .mcr-stat { padding: 1.1rem 1.2rem; border-radius: 1.25rem; } }
+.mcr-stat-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-bottom: 0.35rem; border-radius: 0.65rem; background: rgba(217,180,94,.14); color: var(--pr-gold-light); }
+.mcr-stat-icon.is-live { background: rgba(31,138,76,.25); color: #7fe0a6; }
+.mcr-stat-num { font-size: 1.5rem; font-weight: 800; line-height: 1; color: #fff8e6; font-variant-numeric: tabular-nums; }
+@media (min-width: 768px) { .mcr-stat-num { font-size: 1.9rem; } }
+.mcr-stat-label { font-size: 0.72rem; font-weight: 600; color: var(--pr-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 768px) { .mcr-stat-label { font-size: 0.82rem; } }
+
+.mcr-grid { margin-top: 1rem; display: grid; gap: 1rem; }
+@media (min-width: 1024px) { .mcr-grid { margin-top: 1.5rem; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 1.25rem; } }
+.mcr-side { display: grid; gap: 1rem; }
+@media (min-width: 1024px) { .mcr-side { position: sticky; top: 1.25rem; } }
+
+.mcr-panel { padding: 1rem; border-radius: 1.25rem; background: var(--mcr-surface); border: 1px solid var(--mcr-border-soft); }
+@media (min-width: 768px) { .mcr-panel { padding: 1.35rem; border-radius: 1.5rem; } }
+.mcr-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.mcr-panel-title { font-size: 1rem; font-weight: 800; color: #fff8e6; }
+
+.mcr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 48px; padding: 0 1.15rem; border-radius: 9999px; font-size: 0.92rem; font-weight: 800; white-space: nowrap; }
+.mcr-btn.is-small { min-height: 40px; padding: 0 0.9rem; font-size: 0.85rem; }
+.mcr-btn.is-gold { background: linear-gradient(180deg, var(--pr-gold-light), var(--pr-gold)); color: #1d2414; box-shadow: 0 6px 18px rgba(217,180,94,.25); }
+.mcr-btn.is-gold:active { filter: brightness(.95); }
+.mcr-btn.is-ghost { border: 1px solid var(--mcr-border); color: var(--pr-gold-light); background: transparent; }
+.mcr-btn.is-ghost:active { background: rgba(217,180,94,.1); }
+
+.mcr-rooms { margin-top: 0.85rem; display: grid; gap: 0.6rem; list-style: none; }
+.mcr-room { width: 100%; display: flex; align-items: center; gap: 0.8rem; min-height: 76px; padding: 0.85rem; border-radius: 1rem; background: rgba(0,0,0,.2); border: 1px solid var(--mcr-border-soft); color: var(--pr-text); text-align: left; transition: border-color .15s, background .15s; }
+.mcr-room:hover { border-color: var(--mcr-border); background: rgba(0,0,0,.28); }
+.mcr-room:active { background: rgba(0,0,0,.35); }
+.mcr-room-icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 0.85rem; background: rgba(255,255,255,.07); color: var(--pr-muted); }
+.mcr-room-icon.is-live { background: rgba(31,138,76,.25); color: #7fe0a6; }
+.mcr-room-icon.is-ready { background: rgba(217,180,94,.16); color: var(--pr-gold-light); }
+.mcr-room-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.mcr-room-name { font-size: 1rem; font-weight: 800; color: #fff8e6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcr-room-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--pr-muted); }
+.mcr-room-count { display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 700; color: var(--pr-text); font-variant-numeric: tabular-nums; }
+.mcr-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.12rem 0.55rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.02em; }
+.mcr-pill.is-live { background: var(--pr-ok); color: #fff; }
+.mcr-pill.is-live i { width: 6px; height: 6px; border-radius: 9999px; background: #fff; animation: mcr-pulse 1.6s ease-in-out infinite; }
+.mcr-pill.is-ready { background: rgba(217,180,94,.18); color: var(--pr-gold-light); }
+.mcr-pill.is-closed { background: rgba(255,255,255,.08); color: var(--pr-muted); }
+@keyframes mcr-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .mcr-pill.is-live i { animation: none; } }
+.mcr-room-go { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; min-height: 40px; padding: 0 0.85rem; border-radius: 9999px; border: 1px solid var(--mcr-border); color: var(--pr-gold-light); font-size: 0.85rem; font-weight: 800; }
+.mcr-room-go.is-gold { border-color: transparent; background: linear-gradient(180deg, var(--pr-gold-light), var(--pr-gold)); color: #1d2414; }
+@media (max-width: 380px) { .mcr-room-go-text { display: none; } .mcr-room-go { padding: 0 0.7rem; } }
+
+.mcr-empty { margin-top: 0.85rem; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 2rem 1rem; border-radius: 1rem; border: 1px dashed var(--mcr-border); background: rgba(0,0,0,.15); }
+@media (min-width: 768px) { .mcr-empty { padding: 2.75rem 2rem; } }
+.mcr-empty-icon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 1rem; background: rgba(217,180,94,.14); color: var(--pr-gold-light); }
+.mcr-empty-title { margin-top: 0.9rem; font-family: 'Playfair Display', 'Fraunces', Georgia, serif; font-size: 1.3rem; font-weight: 700; color: #fff8e6; }
+.mcr-empty-text { margin-top: 0.4rem; max-width: 26rem; font-size: 0.9rem; line-height: 1.5; color: var(--pr-muted); }
+.mcr-empty .mcr-btn { margin-top: 1.25rem; width: 100%; max-width: 280px; }
+
+.mcr-steps { margin-top: 0.85rem; display: grid; gap: 0.9rem; list-style: none; }
+.mcr-steps li { display: flex; gap: 0.75rem; align-items: flex-start; }
+.mcr-step-num { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 9999px; background: linear-gradient(180deg, var(--pr-gold-light), var(--pr-gold)); color: #1d2414; font-size: 0.78rem; font-weight: 900; }
+.mcr-steps strong { display: block; font-size: 0.9rem; font-weight: 800; color: #fff8e6; }
+.mcr-steps p { margin-top: 0.15rem; font-size: 0.83rem; line-height: 1.45; color: var(--pr-muted); }
+
+.mcr-links { margin-top: 0.6rem; display: grid; }
+.mcr-link { display: flex; align-items: center; gap: 0.6rem; min-height: 48px; padding: 0 0.25rem; border-bottom: 1px solid var(--mcr-border-soft); color: var(--pr-text); font-size: 0.9rem; font-weight: 600; text-align: left; width: 100%; }
+.mcr-link:last-child { border-bottom: 0; }
+.mcr-link svg:first-child { color: var(--pr-gold-light); flex-shrink: 0; }
+.mcr-link span { flex: 1; min-width: 0; }
+.mcr-link-go { color: var(--pr-muted); flex-shrink: 0; }
+.mcr-link:hover .mcr-link-go { color: var(--pr-gold-light); }
+
+/* Acacia sunrise backdrop: the tree sits behind the greeting, the cards sit on the green (light on mobile data). */
+.pr-shell.mcr {
+  background: #012115 url('/prayer-room/moderator-bg-960.webp') top center / max(100%, 820px) auto no-repeat;
+}
+@media (min-width: 961px) { .pr-shell.mcr { background-image: url('/prayer-room/moderator-bg.webp'); } }
+.mcr .pr-header { background: linear-gradient(180deg, rgba(0,0,0,.35), transparent); border-bottom: 0; }
+.mcr-wrap { padding-top: clamp(9.5rem, 22vw, 17rem); }
+.mcr-intro { text-align: center; }
+.mcr-intro .mcr-title, .mcr-intro .mcr-lead, .mcr-intro .mcr-eyebrow { text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+.mcr-intro .mcr-lead { color: rgba(255,248,230,.85); }
+.mcr-panel, .mcr-stat { background: rgba(1, 30, 18, .62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.mcr-grid, .mcr-side { grid-template-columns: minmax(0, 1fr); }
+.mcr-wrap { overflow-x: hidden; }
+@media (min-width: 1024px) { .mcr-grid { grid-template-columns: minmax(0, 1fr) 340px; } }
+.mcr-rooms { grid-template-columns: minmax(0, 1fr); } .mcr-rooms > li { min-width: 0; } .mcr-room { overflow: hidden; }
+@media (max-width: 480px) { .mcr-room-go-text { display: none; } .mcr-room-go { width: 40px; padding: 0; justify-content: center; } .mcr-room { gap: 0.7rem; padding: 0.8rem 0.75rem; } }
