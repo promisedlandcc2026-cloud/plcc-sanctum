@@ -511,11 +511,11 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
     <div className="pr-shell min-h-screen select-none" style={{ height: 'auto', minHeight: '100vh' }}>
       <header className="pr-header">
         <div className="pr-header-inner">
-          <a href={churchSiteUrl()} className="pr-brand" aria-label="Promised Land Christian Center">
+          <a href={churchSiteUrl()} className="pr-brand" aria-label="PLCC Ka Link overflow room">
             <img src="/prayer-room/prayer-emblem.png" alt="" aria-hidden className="pr-emblem" />
             <div className="min-w-0">
-              <p className="pr-brand-name">PLCC SANCTUM</p>
-              <p className="pr-brand-sub">Prayer Overflow Room</p>
+              <p className="pr-brand-name">PLCC KA LINK</p>
+              <p className="pr-brand-sub">Overflow Room</p>
             </div>
           </a>
           <div className="pr-church">

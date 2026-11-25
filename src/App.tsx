@@ -29,6 +29,7 @@ import { GalleryPage } from './pages/cms/GalleryPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { OverflowJoinView } from './components/public/OverflowJoinView';
+import { JORDAN_ORIGIN } from './lib/plccLinks';
 import { PublicJoinView } from './components/public/PublicJoinView';
 import { JoinFinderPage } from './pages/JoinFinderPage';
 import { ListenerRoomView } from './components/public/ListenerRoomView';
@@ -167,7 +168,12 @@ const RouterContent: React.FC = () => {
             void leavePrayerRoom();
             localStorage.removeItem('sanctum_active_attendee_session');
             setJoinedAttendeeName(null);
-            if (!fromKaLink) navigate(isAuthenticated ? '/dashboard' : `/join/${slug}`);
+            // Came from Ka Link: go back to Ka Link (the overflow is part of it for members).
+            if (fromKaLink) {
+              window.location.assign(`${JORDAN_ORIGIN}/community/chat`);
+              return;
+            }
+            navigate(isAuthenticated ? '/dashboard' : `/join/${slug}`);
           }}
         />
       );
