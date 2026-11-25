@@ -38,7 +38,7 @@ import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { NotificationToastContainer } from './components/common/NotificationToast';
 import { GlobalConfirmModal } from './components/common/GlobalConfirmModal';
 import { loadJoinSession } from './services/realtime/joinSessionStore';
-import { CHURCH_PUBLIC_NAME, churchSiteUrl, isChurchMode } from './lib/appMode';
+import { CHURCH_PUBLIC_NAME, isChurchMode } from './lib/appMode';
 
 const RouterContent: React.FC = () => {
   const { isAuthenticated, authReady, membershipDenied, needsOnboarding, user } = useAuth();
@@ -135,7 +135,7 @@ const RouterContent: React.FC = () => {
       return;
     }
     if (isAuthenticated && ((!church && currentPath === '/') || currentPath === '/login' || currentPath === '/onboarding')) {
-      navigate('/dashboard');
+      navigate(church ? MODERATOR_HOME : '/dashboard');
       return;
     }
     if (membershipDenied && currentPath !== '/login' && !currentPath.startsWith('/join')) {
@@ -371,9 +371,14 @@ const RouterContent: React.FC = () => {
   return <LandingPage onNavigate={navigate} />;
 };
 
+/**
+ * PLCC: the bare Sanctum address is for moderators, so it opens the Moderator Control Room
+ * (sign-in first if needed). Members never come here directly; Ka Link sends them to /join/... (Nov 25 2026).
+ */
+const MODERATOR_HOME = '/dashboard/prayer-rooms';
 function ChurchHomeRedirect() {
   useEffect(() => {
-    window.location.replace(churchSiteUrl());
+    window.location.replace(MODERATOR_HOME);
   }, []);
   return null;
 }

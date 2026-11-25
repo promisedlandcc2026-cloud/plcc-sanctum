@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StaffBrand } from './StaffBrand';
-import { churchSiteUrl, isChurchMode } from '../../lib/appMode';
+import { isChurchMode } from '../../lib/appMode';
 import { UserButton } from '@clerk/react';
 import { useAuth } from '../../context/AuthContext';
 import { Menu, X, Sun, Moon, LogOut, Radio, LayoutDashboard, FileText, Users, History, Settings, CircleHelp, Home, Calendar, BookOpen, Bell, Mail, Images } from 'lucide-react';
@@ -60,7 +60,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           <p>PLCC <span style={{ color: "#e9c36c" }}>SANCTUM</span></p>
         </div>
         <div className="flex items-center gap-2">
-          <UserButton afterSignOutUrl={isChurchMode() ? churchSiteUrl() : '/'} />
+          <UserButton afterSignOutUrl={isChurchMode() ? '/dashboard/prayer-rooms' : '/'} />
           <button
             onClick={toggleDarkMode}
             aria-label="Toggle theme"

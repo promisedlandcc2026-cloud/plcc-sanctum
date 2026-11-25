@@ -1,6 +1,5 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { loadJoinSession } from '../../services/realtime/joinSessionStore';
-import { churchSiteUrl } from '../../lib/appMode';
 import { ConnectionStatus } from '../common/ConnectionStatus';
 import { PrayerRequestModal } from './PrayerRequestModal';
 import { InvitedSpeakerBanner } from './InvitedSpeakerBanner';
@@ -511,13 +510,14 @@ export const ListenerRoomView: React.FC<ListenerRoomViewProps> = ({
     <div className="pr-shell min-h-screen select-none" style={{ height: 'auto', minHeight: '100vh' }}>
       <header className="pr-header">
         <div className="pr-header-inner">
-          <a href={churchSiteUrl()} className="pr-brand" aria-label="PLCC Ka Link overflow room">
+          {/* Not a link: tapping the logo mid-prayer must not take members out to the website. */}
+          <div className="pr-brand" aria-label="PLCC Ka Link overflow room">
             <img src="/prayer-room/prayer-emblem.png" alt="" aria-hidden className="pr-emblem" />
             <div className="min-w-0">
               <p className="pr-brand-name">PLCC KA LINK</p>
               <p className="pr-brand-sub">Overflow Room</p>
             </div>
-          </a>
+          </div>
           <div className="pr-church">
             <p className="pr-church-name">Promised Land Christian Center</p>
             <p className="pr-church-tag">One family. Many nations. One purpose.</p>

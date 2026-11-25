@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { useOpsSearch } from '../../context/OpsSearchContext';
 import { ROLE_CAPABILITIES } from '../../lib/permissions';
-import { churchSiteUrl, isChurchMode } from '../../lib/appMode';
+import { isChurchMode } from '../../lib/appMode';
 import { promptInstall } from '../../pwa';
 
 interface Props {
@@ -116,7 +116,7 @@ export const DashboardTopBar: React.FC<Props> = ({ currentPath, onNavigate, onSh
           {menu === 'user' ? (
             <div className="ops-top-menu is-right" role="menu">
               <div className="flex items-center gap-2 px-3 py-2">
-                <UserButton afterSignOutUrl={isChurchMode() ? churchSiteUrl() : '/'} />
+                <UserButton afterSignOutUrl={isChurchMode() ? '/dashboard/prayer-rooms' : '/'} />
                 <span className="text-xs opacity-70">Manage your account</span>
               </div>
               <button type="button" role="menuitem" onClick={() => { toggleDarkMode(); setMenu(null); }}>
