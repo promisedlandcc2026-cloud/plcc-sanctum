@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,6 +15,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { resolveAltarLink } from '../services/altarLinkResolver';
 import { JORDAN_ORIGIN, PLCC_ONE_ORIGIN } from '../lib/plccLinks';
+import { OVERFLOW_GATHERINGS, OverflowSetupSheet, overflowRoomFor } from '../components/dashboard/OverflowSetupSheet';
 
 /**
  * Moderator Control Room — the moderators' landing page (Nov 25 2026).
@@ -66,7 +67,9 @@ export const ModeratorHomePage: React.FC<ModeratorHomePageProps> = ({ onNavigate
   const openCount = rooms.filter((r) => r.status.tone !== 'closed').length;
   const inOverflow = rooms.reduce((sum, r) => sum + r.people, 0);
   const enter = (id: string) => onNavigate(`/dashboard/prayer-rooms/${id}/control`);
-  const newRoom = () => onNavigate('/dashboard/prayer-rooms/new');
+  const [setupOpen, setSetupOpen] = useState(false);
+  const newRoom = () => setSetupOpen(true);
+  const missing = OVERFLOW_GATHERINGS.filter((g) => !overflowRoomFor(g, prayerRooms || [])).length;
 
   return (
     <div className="pr-shell mcr min-h-screen">
@@ -114,9 +117,9 @@ export const ModeratorHomePage: React.FC<ModeratorHomePageProps> = ({ onNavigate
           <section className="mcr-panel" aria-labelledby="mcr-rooms">
             <div className="mcr-panel-head">
               <h2 id="mcr-rooms" className="mcr-panel-title">Overflow rooms</h2>
-              {isAdmin && rooms.length > 0 ? (
+              {isAdmin && rooms.length > 0 && missing > 0 ? (
                 <button type="button" onClick={newRoom} className="mcr-btn is-ghost is-small cursor-pointer">
-                  <Plus size={16} aria-hidden /> New room
+                  <Plus size={16} aria-hidden /> Add rooms
                 </button>
               ) : null}
             </div>
@@ -127,12 +130,12 @@ export const ModeratorHomePage: React.FC<ModeratorHomePageProps> = ({ onNavigate
                 <h3 className="mcr-empty-title">No overflow rooms yet</h3>
                 <p className="mcr-empty-text">
                   {isAdmin
-                    ? 'Create one overflow room to start. Members from a full Ka Link prayer room will be moved into it.'
+                    ? 'Pick the Ka Link prayer rooms that need an overflow. It takes one tap, with nothing to fill in.'
                     : 'An admin needs to create an overflow room before it can be opened.'}
                 </p>
                 {isAdmin ? (
                   <button type="button" onClick={newRoom} className="mcr-btn is-gold cursor-pointer">
-                    <Plus size={18} aria-hidden /> Create overflow room
+                    <Plus size={18} aria-hidden /> Set up overflow rooms
                   </button>
                 ) : null}
               </div>
@@ -209,6 +212,7 @@ export const ModeratorHomePage: React.FC<ModeratorHomePageProps> = ({ onNavigate
           </aside>
         </div>
       </main>
+      {isAdmin ? <OverflowSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} /> : null}
     </div>
   );
 };
