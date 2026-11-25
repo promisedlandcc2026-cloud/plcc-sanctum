@@ -233,11 +233,8 @@ const RouterContent: React.FC = () => {
     const parts = currentPath.split('/');
     const roomId = parts[3] || 'room_1';
 
-    return (
-      <DashboardLayout currentPath={currentPath} onNavigate={navigate}>
-        <PrayerControlRoomPage roomId={roomId} onNavigate={navigate} />
-      </DashboardLayout>
-    );
+    // Full-screen Moderator Room in the Ka Link layout (no dashboard sidebar around it).
+    return <PrayerControlRoomPage roomId={roomId} onNavigate={navigate} />;
   }
 
   // Dashboard Create/Edit route: /dashboard/prayer-rooms/new or /dashboard/prayer-rooms/:id/edit
